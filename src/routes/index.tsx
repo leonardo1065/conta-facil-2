@@ -36,7 +36,7 @@ const recursos = [
   {
     icon: ScanLine,
     titulo: "Boleto e Pix",
-    texto: "por que o banco de dados ficou totalmente zerado, as contas cadastradas sumiram todas",
+    texto: "como limpou todos os dados preciso de uma opçao ou botao para cadastrar o email e o watszap novamente",
   },
 ];
 
