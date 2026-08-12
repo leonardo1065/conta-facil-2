@@ -36,7 +36,7 @@ const recursos = [
   {
     icon: ScanLine,
     titulo: "Boleto e Pix",
-    texto: "quanto api para aviso watszap tem alguma possivilidade de receber avisos das contas a vencer",
+    texto: "nas configuraçoes o teste de aviso automatico , eviar aviso automatico para o zap nao tem opçao de abilitar o botao nao esta acessivel e normal",
   },
 ];
 
