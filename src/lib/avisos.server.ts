@@ -810,10 +810,11 @@ export async function enviarResumo(
     try {
       const apiKey = process.env.LOVABLE_API_KEY;
       if (!apiKey) {
+        console.error("[avisos:email] LOVABLE_API_KEY não encontrada no process.env");
         return {
           enviado: false,
           status: "sem_config",
-          detalhe: "LOVABLE_API_KEY não configurada",
+          detalhe: "LOVABLE_API_KEY não configurada nos segredos do projeto",
           definitivo: true,
         };
       }
