@@ -1,0 +1,132 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+
+export type HealthKind = "consulta" | "exame" | "remedio";
+export type PlaceType = "clinica" | "hospital" | "farmacia" | "posto" | "laboratorio" | "outro";
+
+export type HealthEvent = {
+  id: string;
+  user_id: string;
+  kind: HealthKind;
+  title: string;
+  scheduled_date: string;
+  scheduled_time: string | null;
+  place_type: PlaceType;
+  place_name: string | null;
+  phone: string | null;
+  cep: string | null;
+  street: string | null;
+  number: string | null;
+  complement: string | null;
+  district: string | null;
+  city: string | null;
+  state: string | null;
+  notes: string | null;
+  done: boolean;
+};
+
+export const HEALTH_KIND_LABEL: Record<HealthKind, string> = {
+  consulta: "Consulta",
+  exame: "Exame",
+  remedio: "Retirada de remédio",
+};
+
+export const PLACE_LABEL: Record<PlaceType, string> = {
+  clinica: "Clínica",
+  hospital: "Hospital",
+  laboratorio: "Laboratório",
+  farmacia: "Farmácia",
+  posto: "Posto de saúde",
+  outro: "Outro",
+};
+
+export function formatHealthAddress(e: HealthEvent): string {
+  const linha = [e.street, e.number].filter(Boolean).join(", ");
+  const resto = [e.complement, e.district, [e.city, e.state].filter(Boolean).join(" - ")]
+    .filter(Boolean)
+    .join(" · ");
+  return [linha, resto].filter(Boolean).join(" · ");
+}
+
+export type Endereco = {
+  cep: string;
+  street: string;
+  district: string;
+  city: string;
+  state: string;
+};
+
+/** Busca endereço pelo CEP (ViaCEP). */
+export async function buscarCep(cepBruto: string): Promise<Endereco> {
+  const cep = cepBruto.replace(/\D/g, "");
+  if (cep.length !== 8) throw new Error("CEP deve ter 8 dígitos");
+  const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+  if (!res.ok) throw new Error("Não foi possível consultar o CEP");
+  const data = (await res.json()) as Record<string, string> & { erro?: boolean | string };
+  if (data.erro) throw new Error("CEP não encontrado");
+  return {
+    cep,
+    street: data.logradouro ?? "",
+    district: data.bairro ?? "",
+    city: data.localidade ?? "",
+    state: data.uf ?? "",
+  };
+}
+
+export function useHealthEvents() {
+  return useQuery({
+    queryKey: ["health_events"],
+    queryFn: async (): Promise<HealthEvent[]> => {
+      const { data, error } = await supabase
+        .from("health_events")
+        .select("*")
+        .order("scheduled_date", { ascending: true })
+        .order("scheduled_time", { ascending: true, nullsFirst: true });
+      if (error) throw error;
+      return (data ?? []) as HealthEvent[];
+    },
+  });
+}
+
+export type HealthInput = Omit<HealthEvent, "id" | "user_id">;
+
+export function useSaveHealthEvent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, values }: { id?: string; values: HealthInput }) => {
+      if (id) {
+        const { error } = await supabase.from("health_events").update(values).eq("id", id);
+        if (error) throw error;
+        return;
+      }
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id;
+      if (!userId) throw new Error("Sessão expirada");
+      const { error } = await supabase.from("health_events").insert({ ...values, user_id: userId });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["health_events"] }),
+  });
+}
+
+export function useToggleHealthDone() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, done }: { id: string; done: boolean }) => {
+      const { error } = await supabase.from("health_events").update({ done }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["health_events"] }),
+  });
+}
+
+export function useDeleteHealthEvent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("health_events").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["health_events"] }),
+  });
+}
