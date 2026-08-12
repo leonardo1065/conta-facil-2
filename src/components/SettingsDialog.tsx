@@ -548,27 +548,12 @@ export function SettingsDialog({
               </div>
               <Switch
                 checked={form.notify_whatsapp}
-                disabled={!zapi?.pronto || !liberado}
                 onCheckedChange={(v) => {
-                  if (v && !zapi?.pronto) {
-                    toast.error(zapi?.mensagem ?? "Credenciais da Z-API ainda não configuradas");
-                    return;
-                  }
-                  if (v && !liberado) {
-                    toast.error("Conclua o teste da Z-API antes de ativar o envio automático");
-                    return;
-                  }
                   setForm((f) => ({ ...f, notify_whatsapp: v }));
                 }}
                 aria-label="Enviar avisos por WhatsApp"
               />
             </div>
-            
-            {(!zapi?.pronto || !liberado) && (
-              <p className="text-[10px] text-destructive/80 px-1 italic">
-                * Para habilitar este botão, você precisa completar os 3 passos do teste da Z-API acima.
-              </p>
-            )}
 
             <Button
               type="button"
