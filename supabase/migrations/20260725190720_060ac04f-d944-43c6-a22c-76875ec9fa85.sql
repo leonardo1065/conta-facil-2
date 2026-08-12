@@ -1,0 +1,2 @@
+ALTER TABLE public.entries ADD COLUMN IF NOT EXISTS recurrence_unit text NOT NULL DEFAULT 'mes';
+ALTER TABLE public.entries ADD CONSTRAINT entries_recurrence_unit_check CHECK (recurrence_unit IN ('mes','semana'));
