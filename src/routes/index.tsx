@@ -36,7 +36,7 @@ const recursos = [
   {
     icon: ScanLine,
     titulo: "Boleto e Pix",
-    texto: "e este e o erro ao enviar o aviso pelo watszap e nao abilita a opçao  Envio automático indisponível\\n\\nZAPI_INSTANCE_ID — não configurado nos segredos do projeto\\n\\nZAPI_INSTANCE_TOKEN — não configurado nos segredos do projeto\\n\\nZAPI_CLIENT_TOKEN — não configurado nos segredos do projeto\\n\\nSalve os valores nos segredos do projeto (Z-API → aba Segurança para o Client-Token) e clique em “Verificar credenciais”.",
+    texto: "como eu faço",
   },
 ];
 
