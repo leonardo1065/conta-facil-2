@@ -36,7 +36,7 @@ const recursos = [
   {
     icon: ScanLine,
     titulo: "Boleto e Pix",
-    texto: "nas configuraçoes o teste de aviso automatico , eviar aviso automatico para o zap nao tem opçao de abilitar o botao nao esta acessivel e normal",
+    texto: "este e o erro ao tentar enviar email  Missing Supabase environment variable(s): SUPABASE_SERVICE_ROLE_KEY. Connect Supabase in Lovable Cloud.",
   },
 ];
 
