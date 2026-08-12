@@ -14,7 +14,275 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      categories: {
+        Row: {
+          color: string
+          created_at: string
+          icon: string
+          id: string
+          kind: Database["public"]["Enums"]["entry_kind"]
+          name: string
+          user_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["entry_kind"]
+          name: string
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["entry_kind"]
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      entries: {
+        Row: {
+          amount: number
+          attachment_path: string | null
+          barcode: string | null
+          category_id: string | null
+          created_at: string
+          description: string
+          due_date: string
+          id: string
+          installment_no: number | null
+          installment_total: number | null
+          is_avulsa: boolean
+          is_recurring: boolean
+          kind: Database["public"]["Enums"]["entry_kind"]
+          month_ref: string | null
+          notes: string | null
+          paid_at: string | null
+          recurrence_interval_months: number
+          recurrence_unit: string
+          series_id: string | null
+          status: Database["public"]["Enums"]["entry_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          attachment_path?: string | null
+          barcode?: string | null
+          category_id?: string | null
+          created_at?: string
+          description: string
+          due_date: string
+          id?: string
+          installment_no?: number | null
+          installment_total?: number | null
+          is_avulsa?: boolean
+          is_recurring?: boolean
+          kind?: Database["public"]["Enums"]["entry_kind"]
+          month_ref?: string | null
+          notes?: string | null
+          paid_at?: string | null
+          recurrence_interval_months?: number
+          recurrence_unit?: string
+          series_id?: string | null
+          status?: Database["public"]["Enums"]["entry_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          attachment_path?: string | null
+          barcode?: string | null
+          category_id?: string | null
+          created_at?: string
+          description?: string
+          due_date?: string
+          id?: string
+          installment_no?: number | null
+          installment_total?: number | null
+          is_avulsa?: boolean
+          is_recurring?: boolean
+          kind?: Database["public"]["Enums"]["entry_kind"]
+          month_ref?: string | null
+          notes?: string | null
+          paid_at?: string | null
+          recurrence_interval_months?: number
+          recurrence_unit?: string
+          series_id?: string | null
+          status?: Database["public"]["Enums"]["entry_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entries_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      health_events: {
+        Row: {
+          cep: string | null
+          city: string | null
+          complement: string | null
+          created_at: string
+          district: string | null
+          done: boolean
+          id: string
+          kind: string
+          notes: string | null
+          number: string | null
+          phone: string | null
+          place_name: string | null
+          place_type: string
+          scheduled_date: string
+          scheduled_time: string | null
+          state: string | null
+          street: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cep?: string | null
+          city?: string | null
+          complement?: string | null
+          created_at?: string
+          district?: string | null
+          done?: boolean
+          id?: string
+          kind?: string
+          notes?: string | null
+          number?: string | null
+          phone?: string | null
+          place_name?: string | null
+          place_type?: string
+          scheduled_date: string
+          scheduled_time?: string | null
+          state?: string | null
+          street?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cep?: string | null
+          city?: string | null
+          complement?: string | null
+          created_at?: string
+          district?: string | null
+          done?: boolean
+          id?: string
+          kind?: string
+          notes?: string | null
+          number?: string | null
+          phone?: string | null
+          place_name?: string | null
+          place_type?: string
+          scheduled_date?: string
+          scheduled_time?: string | null
+          state?: string | null
+          street?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notification_log: {
+        Row: {
+          channel: string
+          created_at: string
+          detail: string | null
+          id: string
+          kind: string
+          ref_date: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          channel?: string
+          created_at?: string
+          detail?: string | null
+          id?: string
+          kind: string
+          ref_date: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          detail?: string | null
+          id?: string
+          kind?: string
+          ref_date?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          email_body_tpl: string | null
+          email_subject_tpl: string | null
+          health_days_before: number
+          id: string
+          notify_days_before: number
+          notify_email: string | null
+          notify_enabled: boolean
+          notify_health: boolean
+          notify_hour: number
+          notify_whatsapp: boolean
+          updated_at: string
+          whatsapp: string | null
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          email_body_tpl?: string | null
+          email_subject_tpl?: string | null
+          health_days_before?: number
+          id: string
+          notify_days_before?: number
+          notify_email?: string | null
+          notify_enabled?: boolean
+          notify_health?: boolean
+          notify_hour?: number
+          notify_whatsapp?: boolean
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          email_body_tpl?: string | null
+          email_subject_tpl?: string | null
+          health_days_before?: number
+          id?: string
+          notify_days_before?: number
+          notify_email?: string | null
+          notify_enabled?: boolean
+          notify_health?: boolean
+          notify_hour?: number
+          notify_whatsapp?: boolean
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +291,9 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
+      entry_kind: "despesa" | "receita"
+      entry_status: "pendente" | "pago"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +420,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+      entry_kind: ["despesa", "receita"],
+      entry_status: ["pendente", "pago"],
+    },
   },
 } as const
