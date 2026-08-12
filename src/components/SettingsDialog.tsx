@@ -195,15 +195,13 @@ export function SettingsDialog({
       await salvar.mutateAsync({
         notify_email: email || null,
         whatsapp: fone.valido ? fone.e164 : null,
-
         notify_days_before: dias,
         notify_hour: hora,
         health_days_before: diasSaude,
         notify_enabled: form.notify_enabled,
         notify_health: form.notify_health,
         // sem credenciais completas da Z-API o disparo automático fica desligado
-        notify_whatsapp: form.notify_whatsapp && !!zapi?.pronto,
-
+        notify_whatsapp: form.notify_whatsapp,
       });
       toast.success("Configurações salvas");
       onOpenChange(false);
