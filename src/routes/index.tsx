@@ -36,7 +36,7 @@ const recursos = [
   {
     icon: ScanLine,
     titulo: "Boleto e Pix",
-    texto: "o leitor de codigo de barras nao esta lendo as 48 colunas pro isso que nao faz a leitura correta",
+    texto: "esse e o erro    Motivo da falha: { \"error\": { \"code\": 401, \"message\": \"Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.\", \"errors\": [ { \"message\": \"Invalid Credentials\", \"domain\": \"global\", \"reason\": \"authError\", \"location\": \"Authorization\", \"locationType\": \"header\" } ], \"status\": \"UNAUTHENTICATED\" } }",
   },
 ];
 

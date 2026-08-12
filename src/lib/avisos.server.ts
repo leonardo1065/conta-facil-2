@@ -720,10 +720,18 @@ export async function enviarEmailGmail(
     if (!resposta.ok) {
       const corpo = await resposta.text();
       console.error(`[avisos] Gmail falhou [${resposta.status}]: ${corpo}`);
+      
+      // Detalhe extraído do erro do Google/Gmail 401
+      let erroDetalhado = corpo.slice(0, 500);
+      try {
+        const json = JSON.parse(corpo);
+        if (json.error?.message) erroDetalhado = json.error.message;
+      } catch (e) {}
+
       return {
         enviado: false,
         status: `falha:${resposta.status}`,
-        detalhe: corpo.slice(0, 500),
+        detalhe: erroDetalhado,
         definitivo: resposta.status === 401 || resposta.status === 403,
       };
     }
