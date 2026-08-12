@@ -10,7 +10,11 @@ export const Route = createFileRoute("/api/public/hooks/avisos")({
           request.headers.get("apikey") ??
           request.headers.get("authorization")?.replace("Bearer ", "");
         const esperado = process.env.SUPABASE_PUBLISHABLE_KEY;
+        
+        console.log(`[hook:avisos] Recebida apikey: ${apikey ? "presente" : "ausente"}`);
+        
         if (!esperado || apikey !== esperado) {
+          console.error(`[hook:avisos] Não autorizado. Esperado: ${esperado ? "configurado" : "ausente"}`);
           return Response.json({ error: "não autorizado" }, { status: 401 });
         }
 
