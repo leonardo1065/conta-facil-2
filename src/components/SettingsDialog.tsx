@@ -541,7 +541,7 @@ export function SettingsDialog({
               </div>
             </div>
 
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center justify-between gap-3 bg-brand/5 border border-brand/20 p-3 rounded-xl">
               <div>
                 <p className="text-sm font-medium">Enviar avisos automáticos por WhatsApp</p>
                 <p className="text-xs text-muted-foreground">
@@ -565,6 +565,12 @@ export function SettingsDialog({
                 aria-label="Enviar avisos por WhatsApp"
               />
             </div>
+            
+            {(!zapi?.pronto || !liberado) && (
+              <p className="text-[10px] text-destructive/80 px-1 italic">
+                * Para habilitar este botão, você precisa completar os 3 passos do teste da Z-API acima.
+              </p>
+            )}
 
             <Button
               type="button"
