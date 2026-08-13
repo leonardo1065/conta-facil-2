@@ -61,7 +61,7 @@ function Home() {
             Financeiro doméstico
           </p>
             <h1 className="mx-auto mt-3 max-w-2xl text-4xl leading-tight font-bold sm:text-5xl">
-              nao deu certo esque volta o que era antes voce nem olhou o zip do projeto que enviei
+              beleza chega por hoje amanha continuamos
             </h1>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
             Controle despesas e receitas da casa em reais, com destaque forte para o que está
