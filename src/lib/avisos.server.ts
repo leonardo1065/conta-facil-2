@@ -837,6 +837,7 @@ export async function enviarResumo(
         text: resumo.texto,
         label: `aviso-${opcoes.tipo}`,
         purpose: "transactional",
+        sender_domain: process.env.AVISOS_SENDER_DOMAIN || "lovable.app",
       };
       const idempotencyKey = `${perfil.id}:${opcoes.tipo}:${hoje}:${Date.now()}`;
       console.log(`[avisos:email] Enviando via Lovable: to=${data.to}, subject=${data.subject}, idempotencyKey=${idempotencyKey}`);
