@@ -36,7 +36,7 @@ const recursos = [
   {
     icon: ScanLine,
     titulo: "Boleto e Pix",
-    texto: "ta dificil      Email API error: 409 {\"status\":409,\"type\":\"run_failed\",\"title\":\"This email send already failed. Send again with a new idempotency key.\",\"message\":\"This email send already failed. Send again with a new idempotency key.\",\"details\":\"\",\"request_id\":\"2e0d1a7932705cce76e839ad3f41b135\"} (após 3 tentativas)",
+    texto: "continua  Email API error: 400 {\"status\":400,\"type\":\"missing_parameter\",\"title\":\"Bad Request\",\"message\":\"\",\"details\":\"\",\"props\":{\"parameter\":\"sender_domain\"},\"request_id\":\"bbdfa079d92c13fc51eeb298c715a3ef\"}",
   },
 ];
 
