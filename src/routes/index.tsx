@@ -36,7 +36,8 @@ const recursos = [
   {
     icon: ScanLine,
     titulo: "Boleto e Pix",
-    texto: "conseguiu adicionar ?",
+    texto:
+      "Enviar e-mail de teste\n\nEmail API error: 403 {\"status\":403,\"type\":\"no_matching_sender\",\"title\":\"No sender domain matches the requested sender domain\",\"message\":\"No sender domain matches the requested sender domain\",\"details\":\"\",\"request_id\":\"636d6687803b375b1580ce704a904e26\"}",
   },
 ];
 
