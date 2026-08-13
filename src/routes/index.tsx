@@ -36,7 +36,7 @@ const recursos = [
   {
     icon: ScanLine,
     titulo: "Boleto e Pix",
-    texto: "desculpa mas nao esta enviando esta dando erro , volta mais atraz ele estava enviando mas precisa confirmar , ta dificil acertar",
+    texto: "da uma olha nisso em outro projeto eles conseguem enviar por email tem como tentar implantar desa forma",
   },
 ];
 
