@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CheckCircle2, Circle, Pencil, Plus, Repeat, Trash2, Wallet } from "lucide-react";
+import { CheckCircle2, Circle, Pencil, Plus, Printer, Repeat, Trash2, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -60,7 +60,18 @@ export function EntryList({
 
   return (
     <>
-      <ul className="space-y-2">
+      <div className="flex justify-end mb-2 print:hidden">
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-2"
+          onClick={() => window.print()}
+        >
+          <Printer className="size-4" />
+          Imprimir Lista
+        </Button>
+      </div>
+      <ul className="space-y-2 print:space-y-4">
         {entries.map((entry) => {
           const info = statusInfo(entry);
           const categoria = categories?.find((c) => c.id === entry.category_id);
@@ -142,7 +153,7 @@ export function EntryList({
                 </p>
               </div>
 
-              <div className="flex shrink-0">
+              <div className="flex shrink-0 print:hidden">
                 {entry.is_avulsa && entry.status !== "pago" && (
                   <Button
                     variant="ghost"

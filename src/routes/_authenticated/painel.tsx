@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   AlertTriangle,
@@ -6,6 +6,7 @@ import {
   Plus,
   Settings,
   Search,
+  Printer,
   Sun,
   TrendingDown,
   TrendingUp,
@@ -161,8 +162,10 @@ function Painel() {
 
       <section className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold">Atenção agora</h2>
-          <div className="relative">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Atenção agora</h2>
+          </div>
+          <div className="relative print:hidden">
             <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               className="pl-9"
