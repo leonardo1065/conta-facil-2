@@ -835,11 +835,12 @@ export async function enviarResumo(
         label: `aviso-${opcoes.tipo}`,
         purpose: "transactional",
       };
-      console.log(`[avisos:email] Enviando via Lovable: to=${data.to}, subject=${data.subject}`);
-      const resposta = await sendLovableEmail(data, {
-        apiKey,
-        idempotencyKey: `${perfil.id}:${opcoes.tipo}:${hoje}`,
-      });
+      const idempotencyKey = `${perfil.id}:${opcoes.tipo}:${hoje}`;
+      console.log(`[avisos:email] Enviando via Lovable: to=${data.to}, subject=${data.subject}, idempotencyKey=${idempotencyKey}`);
+      const resposta = await sendLovableEmail(
+        { ...data, idempotency_key: idempotencyKey },
+        { apiKey }
+      );
       console.log(`[avisos:email] Resposta Lovable: success=${resposta.success}, status=${resposta.status}`);
       if (resposta.success) return { enviado: true, status: "enviado", detalhe: resumo.assunto };
       return {
