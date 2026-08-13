@@ -833,6 +833,7 @@ export async function enviarResumo(
         html: resumo.html,
         text: resumo.texto,
         label: `aviso-${opcoes.tipo}`,
+        purpose: "transactional",
       };
       console.log(`[avisos:email] Enviando via Lovable: to=${data.to}, subject=${data.subject}`);
       const resposta = await sendLovableEmail(data, {
