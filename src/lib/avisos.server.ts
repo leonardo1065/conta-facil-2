@@ -311,15 +311,16 @@ export async function montarResumoVencimento(
 
 
 function remetente(): string {
-  // O usuário solicitou usar o remetente de teste do Resend para contornar problemas de domínio
+  // 1. Prioriza o remetente fixo configurado nos segredos
   const email = process.env.AVISOS_FROM_EMAIL;
   if (email && email.trim()) return `Agenda de Contas <${email.trim()}>`;
   
+  // 2. Tenta construir a partir do domínio configurado
   const domain = process.env.AVISOS_SENDER_DOMAIN;
   if (domain && domain.trim()) return `Agenda de Contas <avisos@${domain.trim()}>`;
 
-  // Fallback para o remetente de teste do Resend conforme solicitado
-  return "onboarding@resend.dev";
+  // 3. Fallback absoluto para a infraestrutura do Lovable
+  return "Agenda de Contas <avisos@lovable.app>";
 }
 
 /** Número em E.164 (assume Brasil quando vier sem código do país). */
@@ -892,24 +893,45 @@ export async function enviarResumo(
           definitivo: true,
         };
       }
+
+      // No Lovable Core, envios para e-mails que NÃO são do próprio usuário 
+      // exigem domínio próprio verificado. Caso contrário, a API rejeita.
+      const from = remetente();
+      const domain = process.env.AVISOS_SENDER_DOMAIN || "lovable.app";
+      
       const data = {
         to: perfil.notify_email!,
-        from: remetente(),
+        from,
         subject: resumo.assunto,
         html: resumo.html,
         text: resumo.texto,
         label: `aviso-${opcoes.tipo}`,
         purpose: "transactional",
-        sender_domain: process.env.AVISOS_SENDER_DOMAIN || "lovable.app",
+        sender_domain: domain,
       };
+      
       const idempotencyKey = `${perfil.id}:${opcoes.tipo}:${hoje}:${Date.now()}`;
-      console.log(`[avisos:email] Enviando via Lovable: to=${data.to}, subject=${data.subject}, idempotencyKey=${idempotencyKey}`);
+      console.log(`[avisos:email] Enviando via Lovable: to=${data.to}, from=${data.from}, domain=${domain}, idempotencyKey=${idempotencyKey}`);
+      
       const resposta = await sendLovableEmail(
         { ...data, idempotency_key: idempotencyKey },
         { apiKey }
       );
+      
       console.log(`[avisos:email] Resposta Lovable: success=${resposta.success}, status=${resposta.status}`);
+      
       if (resposta.success) return { enviado: true, status: "enviado", detalhe: resumo.assunto };
+      
+      // Se der erro de remetente (403), explicamos ao usuário
+      if (resposta.status?.includes("403") || resposta.status?.includes("sender")) {
+        return {
+          enviado: false,
+          status: "falha_remetente",
+          detalhe: "Remetente não autorizado. Use o mesmo e-mail do cadastro no 'E-mail para avisos' ou configure o Gmail abaixo.",
+          definitivo: true
+        };
+      }
+
       return {
         enviado: false,
         status: "falha",
@@ -918,16 +940,22 @@ export async function enviarResumo(
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       console.error(`[avisos:email] Erro ao disparar e-mail para ${perfil.notify_email}:`, error);
-      const detalhe = (
+      
+      let detalhe = (
         msg.includes("API key") || msg.includes("Unauthorized") 
           ? "Erro de autenticação na API de e-mail. Verifique a LOVABLE_API_KEY."
           : msg
       ).slice(0, 500);
+
+      // Trata erro de domínio da Base44/Lovable
+      if (detalhe.includes("403") || detalhe.includes("matching_sender")) {
+        detalhe = "Para usar o envio automático padrão, o 'E-mail para avisos' deve ser o mesmo e-mail que você usa para entrar no app. Caso queira enviar para outro e-mail, configure seu Gmail abaixo.";
+      }
+
       return {
         enviado: false,
         status: error instanceof EmailAPIError ? `falha:${error.message}`.slice(0, 120) : "falha",
         detalhe,
-        // Domínio não verificado / remetente inválido não melhora com retry.
         definitivo: /domain|dom[íi]nio|verif|from|sender|forbidden|401|403/i.test(detalhe),
       };
     }

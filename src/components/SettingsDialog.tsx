@@ -299,14 +299,22 @@ export function SettingsDialog({
               onChange={(e) => setForm((f) => ({ ...f, notify_email: e.target.value }))}
             />
           </div>
+          <div className="rounded-lg bg-blue-50 p-2.5 text-[11px] text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
+            <p className="font-semibold">💡 Dica de Envio Grátis:</p>
+            <p className="mt-0.5">
+              Para usar o sistema de e-mail automático da plataforma sem configurar nada, o 
+              <strong> "E-mail para avisos"</strong> acima deve ser o mesmo e-mail que você usa para entrar no app. 
+              Para enviar para outros endereços, use a configuração do Gmail abaixo.
+            </p>
+          </div>
           
           <div className="space-y-3 rounded-xl border border-brand/20 bg-brand/5 p-3">
             <div>
               <p className="flex items-center gap-2 text-sm font-semibold text-brand">
-                <Mail className="size-4" /> Configuração do Gmail
+                <Mail className="size-4" /> Alternativa: Seu próprio Gmail
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Para enviar avisos usando seu próprio Gmail. Digite seu e-mail e a senha de app (16 dígitos).
+                Use esta opção se quiser enviar avisos para e-mails diferentes ou usar seu próprio endereço como remetente.
               </p>
             </div>
             
