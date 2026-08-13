@@ -36,7 +36,7 @@ const recursos = [
   {
     icon: ScanLine,
     titulo: "Boleto e Pix",
-    texto: "WhatsApp: WhatsApp desativado: ZAPI_INSTANCE_ID não configurado nos segredos do projeto; ZAPI_INSTANCE_TOKEN não configurado nos segredos do projeto; ZAPI_CLIENT_TOKEN não configurado nos segredos do projeto., essa mensagem que da ao enviar",
+    texto: "continua dando o mesmo erro",
   },
 ];
 
