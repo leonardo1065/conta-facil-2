@@ -611,16 +611,14 @@ export function SettingsDialog({
               variant="secondary"
               size="sm"
               className="gap-2"
-              disabled={!fone.valido}
-              onClick={() =>
-                window.open(whatsappLink(fone.e164, mensagemResumo()), "_blank", "noopener")
-              }
+              disabled={testandoZap || !fone.valido}
+              onClick={onTestarWhatsapp}
             >
-              <Send className="size-4" /> Abrir WhatsApp com o resumo
+              <Send className="size-4" />
+              {testandoZap ? "Enviando..." : "Enviar resumo por WhatsApp"}
             </Button>
             <p className="text-xs text-muted-foreground">
-              “Abrir WhatsApp com o resumo” só abre a conversa já preenchida — você ainda precisa
-              tocar em enviar. O envio automático (sem confirmação) usa a Z-API.
+              O botão acima tenta enviar o resumo diretamente via Z-API. Para que funcione, você deve primeiro configurar as credenciais Z-API nos segredos do projeto.
             </p>
 
 
