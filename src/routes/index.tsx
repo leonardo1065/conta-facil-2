@@ -36,7 +36,7 @@ const recursos = [
   {
     icon: ScanLine,
     titulo: "Boleto e Pix",
-    texto: "nao vai nem a pau Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to 535 5.7.8 https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-49981b62437sm71832255e9.12 - gsmtp",
+    texto: "e se enviar para watszap e mais facil sem complicações",
   },
 ];
 
