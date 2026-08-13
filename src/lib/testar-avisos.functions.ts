@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { enviarResumo, carregarPerfil, TipoAviso } from "./avisos.server";
+import { enviarResumo, carregarPerfil, TipoAviso, type AvisoPerfil } from "./avisos.server";
 
 export const testarEnvioManual = createServerFn({ method: "POST" })
   .inputValidator((data) =>
