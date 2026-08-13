@@ -36,7 +36,7 @@ const recursos = [
   {
     icon: ScanLine,
     titulo: "Boleto e Pix",
-    texto: "continua  Email API error: 400 {\"status\":400,\"type\":\"missing_parameter\",\"title\":\"Bad Request\",\"message\":\"\",\"details\":\"\",\"props\":{\"parameter\":\"sender_domain\"},\"request_id\":\"bbdfa079d92c13fc51eeb298c715a3ef\"}",
+    texto: "denovo, ta erro constante looping , tem jeito ou nao",
   },
 ];
 
