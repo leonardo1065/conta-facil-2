@@ -922,12 +922,11 @@ export async function enviarResumo(
       
       if (resposta.success) return { enviado: true, status: "enviado", detalhe: resumo.assunto };
       
-      // Se der erro de remetente (403), explicamos ao usuário
       if (resposta.status?.includes("403") || resposta.status?.includes("sender")) {
         return {
           enviado: false,
           status: "falha_remetente",
-          detalhe: "Remetente não autorizado. Use o mesmo e-mail do cadastro no 'E-mail para avisos' ou configure o Gmail abaixo.",
+          detalhe: "O domínio do remetente não está autorizado. Configure um domínio verificado nos segredos do projeto.",
           definitivo: true
         };
       }
@@ -947,9 +946,8 @@ export async function enviarResumo(
           : msg
       ).slice(0, 500);
 
-      // Trata erro de domínio da Base44/Lovable
       if (detalhe.includes("403") || detalhe.includes("matching_sender")) {
-        detalhe = "Para usar o envio automático padrão, o 'E-mail para avisos' deve ser o mesmo e-mail que você usa para entrar no app. Caso queira enviar para outro e-mail, configure seu Gmail abaixo.";
+        detalhe = "Erro de autorização: o e-mail do remetente não corresponde a um domínio verificado.";
       }
 
       return {
