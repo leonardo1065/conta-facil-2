@@ -838,6 +838,7 @@ export async function enviarResumo(
       const resposta = await sendLovableEmail(data, {
         apiKey,
         idempotencyKey: `${perfil.id}:${opcoes.tipo}:${hoje}`,
+        purpose: "transactional",
       });
       console.log(`[avisos:email] Resposta Lovable: success=${resposta.success}, status=${resposta.status}`);
       if (resposta.success) return { enviado: true, status: "enviado", detalhe: resumo.assunto };

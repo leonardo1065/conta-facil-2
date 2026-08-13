@@ -36,7 +36,7 @@ const recursos = [
   {
     icon: ScanLine,
     titulo: "Boleto e Pix",
-    texto: "por favor precisa acerta o envio de avisos por email, nao esta envianda",
+    texto: "aqui esta o erro \nEmail API error: 400 {\"status\":400,\"type\":\"missing_parameter\",\"title\":\"Missing run_id or idempotency_key\",\"message\":\"Missing run_id or idempotency_key\",\"details\":\"Auth emails require run_id. App emails can omit run_id by providing idempotency_key with purpose=transactional.\",\"props\":{\"parameter\":\"run_id\"},\"request_id\":\"a8484015ddc57993eedc185c9542a59c\"}",
   },
 ];
 
