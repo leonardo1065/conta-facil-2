@@ -601,23 +601,20 @@ export async function enviarWhatsappZapi(
 }
 
 /**
- * Envia o resumo por WhatsApp.
- * Tenta primeiro a Z-API (caso configurada).
- * Se falhar ou não estiver configurada, tenta o método nativo via Lovable API.
+ * Envia o resumo por WhatsApp. Usa a Z-API quando configurada e,
+ * na falta dela, o Twilio pelo gateway de conectores.
  */
 export async function enviarWhatsapp(
   perfil: AvisoPerfil,
   resumo: AvisoResumo,
 ): Promise<ResultadoCanal> {
   const zapi = verificarZapi();
-  
-  // 1. Se Z-API estiver minimamente configurada (mesmo que parcial), tentamos por ela
-  if (zapi.pronto || Object.values(zapi.presentes).some(Boolean)) {
-    return enviarWhatsappZapi(perfil, resumo);
+  if (zapi.pronto) return enviarWhatsappZapi(perfil, resumo);
+  // Z-API parcialmente configurada é erro de configuração, não motivo para cair no Twilio
+  const parcial = Object.values(zapi.presentes).some(Boolean);
+  if (parcial) {
+    return { enviado: false, status: "sem_zapi", detalhe: zapi.mensagem, definitivo: true };
   }
-
-  // 2. Se não houver Z-API, tentamos o método nativo da Lovable API (Twilio Connector)
-  // Nota: Isso requer que o TWILIO_API_KEY e LOVABLE_API_KEY estejam nos Secrets.
   return enviarWhatsappTwilio(perfil, resumo);
 }
 
