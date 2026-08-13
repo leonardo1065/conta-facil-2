@@ -36,8 +36,7 @@ const recursos = [
   {
     icon: ScanLine,
     titulo: "Boleto e Pix",
-    texto:
-      "nada feito tente essa opçao   Host: smtp.gmail.com\n\nPorta: 587 (ou 465)\n\nUsuário: seu-email@gmail.com\n\nSenha: A senha de app gerada no passo 3 (não use sua senha normal do Gmail).",
+    texto: "conseguiu adicionar ?",
   },
 ];
 
