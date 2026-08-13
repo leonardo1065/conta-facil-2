@@ -205,3 +205,16 @@
   background-image: var(--gradient-surface);
   box-shadow: var(--shadow-soft-value);
 }
+
+@media print {
+  body {
+    color: black !important;
+    background: white !important;
+  }
+  .text-muted-foreground, .text-gray-500, .text-slate-500 {
+    color: #333 !important;
+  }
+  .border, .border-border {
+    border-color: #000 !important;
+  }
+}

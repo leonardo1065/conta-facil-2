@@ -188,13 +188,13 @@ function Diarias() {
           </p>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 print:block">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 print:grid-cols-1 print:gap-1">
           {contas.map((c) => {
             const acumulado = c.month_ref === ref ? Number(c.amount) : 0;
             return (
               <div
                 key={c.id}
-                className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-soft print:border-none print:shadow-none print:border-b print:rounded-none print:px-0"
+                className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-soft print:border-none print:shadow-none print:border-b print:border-black print:rounded-none print:px-0 print:py-1 print:text-black"
               >
                 <div className="flex items-center justify-between">
                   <div>

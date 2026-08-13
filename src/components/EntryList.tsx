@@ -71,14 +71,14 @@ export function EntryList({
           Imprimir Lista
         </Button>
       </div>
-      <ul className="space-y-2 print:space-y-4">
+      <ul className="space-y-2 print:space-y-1">
         {entries.map((entry) => {
           const info = statusInfo(entry);
           const categoria = categories?.find((c) => c.id === entry.category_id);
           return (
             <li
               key={entry.id}
-              className="card-elevated flex items-center gap-3 px-3 py-3 sm:px-4"
+              className="card-elevated flex items-center gap-3 px-3 py-3 sm:px-4 print:border-none print:shadow-none print:border-b print:border-black print:rounded-none print:px-0 print:py-1 print:text-black print:bg-none"
             >
               <button
                 type="button"

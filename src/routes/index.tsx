@@ -61,7 +61,7 @@ function Home() {
             Financeiro doméstico
           </p>
             <h1 className="mx-auto mt-3 max-w-2xl text-4xl leading-tight font-bold sm:text-5xl">
-              nao achei nenhuma mudança, aonde eu peço para listar todos os movimentos diarios?
+              detalhe pode diminuir um pouco o espaço de uma categoria para outra, para possiveis inclusao de futuras categorias  e a impressão ficou em um tom claro ,poderia escurecer as informações em um tom mais escuro
             </h1>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
             Controle despesas e receitas da casa em reais, com destaque forte para o que está
