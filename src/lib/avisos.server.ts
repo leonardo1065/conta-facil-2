@@ -837,7 +837,7 @@ export async function enviarResumo(
         label: `aviso-${opcoes.tipo}`,
         purpose: "transactional",
       };
-      const idempotencyKey = `${perfil.id}:${opcoes.tipo}:${hoje}`;
+      const idempotencyKey = `${perfil.id}:${opcoes.tipo}:${hoje}:${Date.now()}`;
       console.log(`[avisos:email] Enviando via Lovable: to=${data.to}, subject=${data.subject}, idempotencyKey=${idempotencyKey}`);
       const resposta = await sendLovableEmail(
         { ...data, idempotency_key: idempotencyKey },
