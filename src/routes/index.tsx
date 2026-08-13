@@ -61,7 +61,7 @@ function Home() {
             Financeiro doméstico
           </p>
           <h1 className="mx-auto mt-3 max-w-2xl text-4xl leading-tight font-bold sm:text-5xl">
-            lamentavel continua dando erro la no lab44 envia no zap e no email semm nenhum erro
+            Erro de autorização: o e-mail do remetente não corresponde a um domínio verificado.
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
             Controle despesas e receitas da casa em reais, com destaque forte para o que está
