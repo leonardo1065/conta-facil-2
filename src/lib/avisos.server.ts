@@ -311,15 +311,16 @@ export async function montarResumoVencimento(
 
 
 function remetente(): string {
-  // O usuário solicitou usar o remetente de teste do Resend para contornar problemas de domínio
+  // 1. Prioriza o remetente fixo configurado nos segredos
   const email = process.env.AVISOS_FROM_EMAIL;
   if (email && email.trim()) return `Agenda de Contas <${email.trim()}>`;
   
+  // 2. Tenta construir a partir do domínio configurado
   const domain = process.env.AVISOS_SENDER_DOMAIN;
   if (domain && domain.trim()) return `Agenda de Contas <avisos@${domain.trim()}>`;
 
-  // Fallback para o remetente de teste do Resend conforme solicitado
-  return "onboarding@resend.dev";
+  // 3. Fallback absoluto para a infraestrutura do Lovable
+  return "Agenda de Contas <avisos@lovable.app>";
 }
 
 /** Número em E.164 (assume Brasil quando vier sem código do país). */
