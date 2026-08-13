@@ -246,6 +246,7 @@ export type Database = {
           notify_health: boolean
           notify_hour: number
           notify_whatsapp: boolean
+          smtp_config: Json | null
           updated_at: string
           whatsapp: string | null
         }
@@ -262,6 +263,7 @@ export type Database = {
           notify_health?: boolean
           notify_hour?: number
           notify_whatsapp?: boolean
+          smtp_config?: Json | null
           updated_at?: string
           whatsapp?: string | null
         }
@@ -278,6 +280,7 @@ export type Database = {
           notify_health?: boolean
           notify_hour?: number
           notify_whatsapp?: boolean
+          smtp_config?: Json | null
           updated_at?: string
           whatsapp?: string | null
         }
