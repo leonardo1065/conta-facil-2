@@ -36,7 +36,7 @@ const recursos = [
   {
     icon: ScanLine,
     titulo: "Boleto e Pix",
-    texto: "essa senha de 16 digitos ela e diferente do loguin ou vai alterar e modificar a senha o email do gemail ou seja assim que eu digitar esses 16 digitos sera assumida para abrir meus email",
+    texto: "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to 535 5.7.8 https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-4815a5af441sm7928088f8f.22 - gsmt",
   },
 ];
 
