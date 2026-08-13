@@ -307,7 +307,9 @@ function remetente(): string {
   const email = process.env.AVISOS_FROM_EMAIL;
   const domain = process.env.AVISOS_SENDER_DOMAIN;
   if (email) return `Agenda de Contas <${email}>`;
-  if (domain) return `Agenda de Contas <avisos@${domain}>`;
+  // Se não houver domínio configurado, forçamos o domínio padrão do Lovable Cloud
+  // para evitar o erro "missing_parameter: sender_domain"
+  if (domain && domain.trim()) return `Agenda de Contas <avisos@${domain}>`;
   return "Agenda de Contas <avisos@lovable.app>";
 }
 
