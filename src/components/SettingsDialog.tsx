@@ -333,7 +333,7 @@ export function SettingsDialog({
                 className="h-8 text-sm"
               />
               <p className="text-[10px] text-muted-foreground">
-                Não é sua senha normal. Gere em: Conta Google > Segurança > Senhas de App.
+                Não é sua senha normal. Gere em: Conta Google {" > "} Segurança {" > "} Senhas de App.
               </p>
             </div>
           </div>
