@@ -1,6 +1,7 @@
 // Montagem e envio dos avisos automáticos (contas a vencer + saúde).
 // Server-only: usa service role para varrer todos os usuários no cron.
 import { sendLovableEmail, EmailAPIError } from "@lovable.dev/email-js";
+import nodemailer from "nodemailer";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { addDays, diffDays, formatBRL, formatDate, todayISO } from "./dates";
 import { normalizarWhatsapp } from "./phone";
@@ -746,6 +747,54 @@ export async function enviarEmailGmail(
   }
 }
 
+/** Envia o resumo usando SMTP (Gmail ou outro) caso configurado nos segredos. */
+export async function enviarEmailSMTP(
+  perfil: AvisoPerfil,
+  resumo: AvisoResumo,
+): Promise<ResultadoCanal> {
+  const host = process.env.SMTP_HOST;
+  const port = Number(process.env.SMTP_PORT || 587);
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+
+  if (!host || !user || !pass) {
+    return {
+      enviado: false,
+      status: "sem_smtp",
+      detalhe: "SMTP não configurado (host, user ou pass ausentes)",
+      definitivo: true,
+    };
+  }
+
+  try {
+    const transporter = nodemailer.createTransport({
+      host,
+      port,
+      secure: port === 465,
+      auth: { user, pass },
+    });
+
+    await transporter.sendMail({
+      from: `Agenda de Contas <${user}>`,
+      to: perfil.notify_email!,
+      subject: resumo.assunto,
+      text: resumo.texto,
+      html: resumo.html,
+    });
+
+    return { enviado: true, status: "enviado", detalhe: resumo.assunto };
+  } catch (error) {
+    const detalhe = error instanceof Error ? error.message : "erro desconhecido no SMTP";
+    console.error("[avisos:smtp] Falha ao enviar:", detalhe);
+    return {
+      enviado: false,
+      status: "falha_smtp",
+      detalhe: detalhe.slice(0, 500),
+      definitivo: /auth|login|credential|535/i.test(detalhe),
+    };
+  }
+}
+
 export type ResultadoEnvio = {
   enviado: boolean;
   status: string;
@@ -815,10 +864,14 @@ export async function enviarResumo(
     };
   }
 
-  // Com o Gmail conectado, ele é o remetente; senão, cai no e-mail gerenciado.
-  const usarGmail = Boolean(process.env.GOOGLE_MAIL_API_KEY && process.env.LOVABLE_API_KEY);
+  // 1. Tenta SMTP (Gmail com senha de app) se configurado
+  const usarSMTP = Boolean(process.env.SMTP_HOST && process.env.SMTP_USER);
+  // 2. Tenta Google Mail API (Conector)
+  const usarGmailAPI = !usarSMTP && Boolean(process.env.GOOGLE_MAIL_API_KEY && process.env.LOVABLE_API_KEY);
+
   const email = await comRepeticao("email", async () => {
-    if (usarGmail) return enviarEmailGmail(perfil, resumo);
+    if (usarSMTP) return enviarEmailSMTP(perfil, resumo);
+    if (usarGmailAPI) return enviarEmailGmail(perfil, resumo);
     try {
       const apiKey = process.env.LOVABLE_API_KEY;
       if (!apiKey) {
