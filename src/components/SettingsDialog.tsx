@@ -137,6 +137,8 @@ export function SettingsDialog({
     notify_enabled: true,
     notify_health: true,
     notify_whatsapp: false,
+    smtp_user: "",
+    smtp_pass: "",
   });
 
   useEffect(() => {
@@ -151,6 +153,8 @@ export function SettingsDialog({
       notify_enabled: settings?.notify_enabled ?? true,
       notify_health: settings?.notify_health ?? true,
       notify_whatsapp: settings?.notify_whatsapp ?? false,
+      smtp_user: settings?.smtp_config?.user ?? "",
+      smtp_pass: settings?.smtp_config?.pass ?? "",
     });
   }, [open, settings]);
 
@@ -192,6 +196,15 @@ export function SettingsDialog({
       return;
     }
     try {
+      const smtp_config = form.smtp_user.trim() && form.smtp_pass.trim() 
+        ? {
+            host: "smtp.gmail.com",
+            port: 587,
+            user: form.smtp_user.trim(),
+            pass: form.smtp_pass.trim()
+          }
+        : null;
+
       await salvar.mutateAsync({
         notify_email: email || null,
         whatsapp: fone.valido ? fone.e164 : null,
@@ -200,8 +213,8 @@ export function SettingsDialog({
         health_days_before: diasSaude,
         notify_enabled: form.notify_enabled,
         notify_health: form.notify_health,
-        // sem credenciais completas da Z-API o disparo automático fica desligado
         notify_whatsapp: form.notify_whatsapp,
+        smtp_config,
       });
       toast.success("Configurações salvas");
       onOpenChange(false);
@@ -285,6 +298,44 @@ export function SettingsDialog({
               value={form.notify_email}
               onChange={(e) => setForm((f) => ({ ...f, notify_email: e.target.value }))}
             />
+          </div>
+          
+          <div className="space-y-3 rounded-xl border border-brand/20 bg-brand/5 p-3">
+            <div>
+              <p className="flex items-center gap-2 text-sm font-semibold text-brand">
+                <Mail className="size-4" /> Configuração do Gmail
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Para enviar avisos usando seu próprio Gmail. Digite seu e-mail e a senha de app (16 dígitos).
+              </p>
+            </div>
+            
+            <div className="space-y-1.5">
+              <Label htmlFor="smtp_user" className="text-xs">E-mail do Gmail</Label>
+              <Input
+                id="smtp_user"
+                type="email"
+                placeholder="seu-email@gmail.com"
+                value={form.smtp_user}
+                onChange={(e) => setForm((f) => ({ ...f, smtp_user: e.target.value }))}
+                className="h-8 text-sm"
+              />
+            </div>
+            
+            <div className="space-y-1.5">
+              <Label htmlFor="smtp_pass" className="text-xs">Senha de App (16 dígitos)</Label>
+              <Input
+                id="smtp_pass"
+                type="password"
+                placeholder="xxxx xxxx xxxx xxxx"
+                value={form.smtp_pass}
+                onChange={(e) => setForm((f) => ({ ...f, smtp_pass: e.target.value }))}
+                className="h-8 text-sm"
+              />
+              <p className="text-[10px] text-muted-foreground">
+                Não é sua senha normal. Gere em: Conta Google {" > "} Segurança {" > "} Senhas de App.
+              </p>
+            </div>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">

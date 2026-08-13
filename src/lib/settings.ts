@@ -15,10 +15,16 @@ export type Settings = {
   notify_whatsapp: boolean;
   email_subject_tpl: string | null;
   email_body_tpl: string | null;
+  smtp_config?: {
+    host?: string;
+    port?: number;
+    user?: string;
+    pass?: string;
+  } | null;
 };
 
 const COLS =
-  "display_name, notify_email, whatsapp, notify_days_before, notify_enabled, notify_health, notify_hour, health_days_before, notify_whatsapp, email_subject_tpl, email_body_tpl";
+  "display_name, notify_email, whatsapp, notify_days_before, notify_enabled, notify_health, notify_hour, health_days_before, notify_whatsapp, email_subject_tpl, email_body_tpl, smtp_config";
 
 
 export function useSettings() {

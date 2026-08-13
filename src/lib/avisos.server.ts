@@ -21,6 +21,12 @@ export type AvisoPerfil = {
   notify_whatsapp: boolean;
   email_subject_tpl: string | null;
   email_body_tpl: string | null;
+  smtp_config: {
+    host?: string;
+    port?: number;
+    user?: string;
+    pass?: string;
+  } | null;
 };
 
 export type AvisoResumo = {
@@ -31,7 +37,7 @@ export type AvisoResumo = {
 };
 
 const PERFIL_COLS =
-  "id, display_name, notify_email, whatsapp, notify_days_before, notify_enabled, notify_health, notify_hour, health_days_before, notify_whatsapp, email_subject_tpl, email_body_tpl";
+  "id, display_name, notify_email, whatsapp, notify_days_before, notify_enabled, notify_health, notify_hour, health_days_before, notify_whatsapp, email_subject_tpl, email_body_tpl, smtp_config";
 
 /** Hora atual (0-23) no fuso America/Sao_Paulo. */
 export function horaSaoPaulo(): number {
@@ -752,16 +758,16 @@ export async function enviarEmailSMTP(
   perfil: AvisoPerfil,
   resumo: AvisoResumo,
 ): Promise<ResultadoCanal> {
-  const host = process.env.SMTP_HOST;
-  const port = Number(process.env.SMTP_PORT || 587);
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
+  const host = perfil.smtp_config?.host || process.env.SMTP_HOST;
+  const port = Number(perfil.smtp_config?.port || process.env.SMTP_PORT || 587);
+  const user = perfil.smtp_config?.user || process.env.SMTP_USER;
+  const pass = perfil.smtp_config?.pass || process.env.SMTP_PASS;
 
   if (!host || !user || !pass) {
     return {
       enviado: false,
       status: "sem_smtp",
-      detalhe: "SMTP não configurado (host, user ou pass ausentes)",
+      detalhe: "SMTP não configurado (host, usuário ou senha ausentes). Configure em Configurações > E-mail.",
       definitivo: true,
     };
   }
@@ -864,8 +870,11 @@ export async function enviarResumo(
     };
   }
 
-  // 1. Tenta SMTP (Gmail com senha de app) se configurado
-  const usarSMTP = Boolean(process.env.SMTP_HOST && process.env.SMTP_USER);
+  // 1. Tenta SMTP (Gmail com senha de app) se configurado (global ou no perfil)
+  const usarSMTP = Boolean(
+    (perfil.smtp_config?.host && perfil.smtp_config?.user && perfil.smtp_config?.pass) ||
+    (process.env.SMTP_HOST && process.env.SMTP_USER)
+  );
   // 2. Tenta Google Mail API (Conector)
   const usarGmailAPI = !usarSMTP && Boolean(process.env.GOOGLE_MAIL_API_KEY && process.env.LOVABLE_API_KEY);
 

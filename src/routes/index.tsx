@@ -36,7 +36,7 @@ const recursos = [
   {
     icon: ScanLine,
     titulo: "Boleto e Pix",
-    texto: "aonde eu cadastro essa senha de 16 digitos",
+    texto: "Pronto! Agora você pode cadastrar a senha de 16 dígitos diretamente nas Configurações (ícone de engrenagem) no campo 'Gmail'.",
   },
 ];
 
