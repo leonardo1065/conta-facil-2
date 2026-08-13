@@ -20,7 +20,12 @@ import { useCategories, useDeleteEntry, useTogglePaid, type Entry } from "@/lib/
 
 
 export function statusInfo(entry: Entry) {
-  if (entry.status === "pago") return { label: "Pago", tone: "text-success", dot: "bg-success" };
+  if (entry.status === "pago")
+    return {
+      label: entry.kind === "receita" ? "Recebido" : "Pago",
+      tone: "text-success",
+      dot: "bg-success",
+    };
   const delta = diffDays(todayISO(), entry.due_date);
   if (entry.kind === "receita") return { label: "A receber", tone: "text-info", dot: "bg-info" };
   if (delta < 0) return { label: `Vencida há ${Math.abs(delta)}d`, tone: "text-destructive", dot: "bg-destructive" };

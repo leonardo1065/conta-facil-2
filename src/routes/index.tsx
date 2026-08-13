@@ -36,7 +36,7 @@ const recursos = [
   {
     icon: ScanLine,
     titulo: "Boleto e Pix",
-    texto: "como limpou todos os dados preciso de uma opçao ou botao para cadastrar o email e o watszap novamente",
+    texto: "no campo receitas incluir na opçao status recebido",
   },
 ];
 

@@ -167,7 +167,9 @@ export function EntryDialog({ open, onOpenChange, entry, defaultDate }: Props) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="pendente">Pendente</SelectItem>
-                    <SelectItem value="pago">Pago</SelectItem>
+                    <SelectItem value="pago">
+                      {form.kind === "receita" ? "Recebido" : "Pago"}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -206,7 +208,9 @@ export function EntryDialog({ open, onOpenChange, entry, defaultDate }: Props) {
 
             {form.status === "pago" && (
               <div className="space-y-2">
-                <Label htmlFor="pagamento">Data do pagamento</Label>
+                <Label htmlFor="pagamento">
+                  {form.kind === "receita" ? "Data do recebimento" : "Data do pagamento"}
+                </Label>
                 <DateField
                   id="pagamento"
                   value={form.paid_at || todayISO()}
