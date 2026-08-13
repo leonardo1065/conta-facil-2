@@ -36,7 +36,7 @@ const recursos = [
   {
     icon: ScanLine,
     titulo: "Boleto e Pix",
-    texto: "Motivo da falha: Conecte o Twilio (WhatsApp) para ativar o envio automático",
+    texto: "nao precisa abrir watza apenas coloque um aviso de enviar para o watzao informado o aviso direto sem abrir o watzap",
   },
 ];
 
