@@ -36,7 +36,7 @@ const recursos = [
   {
     icon: ScanLine,
     titulo: "Boleto e Pix",
-    texto: "api.whatsapp.com está bloqueado, nao consigo saber se o teste para o watzao esta funcionando ele da essa mensagem, muda a opçao de abrir watzap com resumo apenas deixe com enviar eatzao teste  para clicar em enviar",
+    texto: "WhatsApp: WhatsApp desativado: ZAPI_INSTANCE_ID não configurado nos segredos do projeto; ZAPI_INSTANCE_TOKEN não configurado nos segredos do projeto; ZAPI_CLIENT_TOKEN não configurado nos segredos do projeto., essa mensagem que da ao enviar",
   },
 ];
 
