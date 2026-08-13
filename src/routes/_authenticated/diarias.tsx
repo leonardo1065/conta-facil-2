@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus, ShoppingBasket } from "lucide-react";
+import { Plus, ShoppingBasket, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -146,9 +146,14 @@ function Diarias() {
             recomeça do zero no dia 1º.
           </p>
         </div>
-        <Button className="gap-2" onClick={() => setNovo(true)}>
-          <Plus className="size-4" /> Nova conta diária
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" className="gap-2 print:hidden" onClick={() => window.print()}>
+            <Printer className="size-4" /> Imprimir Diárias
+          </Button>
+          <Button className="gap-2 print:hidden" onClick={() => setNovo(true)}>
+            <Plus className="size-4" /> Nova conta diária
+          </Button>
+        </div>
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
@@ -183,20 +188,25 @@ function Diarias() {
           </p>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 print:block">
           {contas.map((c) => {
             const acumulado = c.month_ref === ref ? Number(c.amount) : 0;
             return (
               <div
                 key={c.id}
-                className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-soft"
+                className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-soft print:border-none print:shadow-none print:border-b print:rounded-none print:px-0"
               >
-                <div>
-                  <p className="font-semibold">{c.description}</p>
-                  <p className="text-2xl font-bold">{formatBRL(acumulado)}</p>
-                  <p className="text-xs text-muted-foreground">acumulado no mês</p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold">{c.description}</p>
+                    <p className="text-2xl font-bold">{formatBRL(acumulado)}</p>
+                    <p className="text-xs text-muted-foreground print:hidden">acumulado no mês</p>
+                  </div>
+                  <div className="hidden print:block text-right">
+                    <p className="text-sm font-medium">{formatMonth(new Date())}</p>
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-1.5 print:hidden">
                   {ATALHOS.map((v) => (
                     <Button
                       key={v}
