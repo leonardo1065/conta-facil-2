@@ -36,7 +36,7 @@ const recursos = [
   {
     icon: ScanLine,
     titulo: "Boleto e Pix",
-    texto: "no campo receitas incluir na opçao status recebido",
+    texto: "por favor precisa acerta o envio de avisos por email, nao esta envianda",
   },
 ];
 
