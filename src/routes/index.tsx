@@ -36,7 +36,7 @@ const recursos = [
   {
     icon: ScanLine,
     titulo: "Boleto e Pix",
-    texto: "da uma olha nisso em outro projeto eles conseguem enviar por email tem como tentar implantar desa forma",
+    texto: "O app usa a integração nativa do Base44: base44.integrations.Core.SendEmail — o endpoint de e-mail embutido na plataforma. Ele envia pelo provedor de e-mail gerenciado pela Base44 (não é uma API externa como SendGrid ou Mailgun que você precise configurar).\n\nImportante: esse endpoint só entrega e-mails para usuários registrados no app. Por isso, na tela de Configurações, o campo \"E-mail de destino\" precisa ser o mesmo e-mail da conta cadastrada — se você digitar um endereço diferente, o envio é rejeitado. Para enviar a destinatários externos (que não são usuários do app), seria necessário um plano pago com o app habilitado para isso, ou uma integração de e-mail externa (ex.: Gmail, Resend).",
   },
 ];
 
