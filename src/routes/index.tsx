@@ -36,7 +36,7 @@ const recursos = [
   {
     icon: ScanLine,
     titulo: "Boleto e Pix",
-    texto: "ele abre o wats e nao envia automatico",
+    texto: "Motivo da falha: Conecte o Twilio (WhatsApp) para ativar o envio automático",
   },
 ];
 
