@@ -36,7 +36,7 @@ const recursos = [
   {
     icon: ScanLine,
     titulo: "Boleto e Pix",
-    texto: "Pronto! Agora você pode cadastrar a senha de 16 dígitos diretamente nas Configurações (ícone de engrenagem) no campo 'Gmail'.",
+    texto: "essa senha de 16 digitos ela e diferente do loguin ou vai alterar e modificar a senha o email do gemail ou seja assim que eu digitar esses 16 digitos sera assumida para abrir meus email",
   },
 ];
 
