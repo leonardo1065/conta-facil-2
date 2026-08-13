@@ -17,9 +17,11 @@ export const testarEnvioManual = createServerFn({ method: "POST" })
     if (!perfil) throw new Error("Perfil não encontrado");
 
     // Forçamos o canal solicitado ativando-o temporariamente no objeto de perfil para o teste
-    const perfilTeste = {
+    // notify_email é o endereço de e-mail (string), notify_enabled controla se envia e-mail
+    // notify_whatsapp (boolean) controla se envia WhatsApp
+    const perfilTeste: AvisoPerfil = {
       ...perfil,
-      notify_email: data.canal === "email",
+      notify_enabled: data.canal === "email",
       notify_whatsapp: data.canal === "whatsapp",
     };
 
