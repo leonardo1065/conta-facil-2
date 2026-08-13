@@ -60,9 +60,9 @@ function Home() {
           <p className="text-sm font-medium tracking-wide text-primary uppercase">
             Financeiro doméstico
           </p>
-          <h1 className="mx-auto mt-3 max-w-2xl text-4xl leading-tight font-bold sm:text-5xl">
-            Erro de autorização: o e-mail do remetente não corresponde a um domínio verificado.
-          </h1>
+            <h1 className="mx-auto mt-3 max-w-2xl text-4xl leading-tight font-bold sm:text-5xl">
+              ja que nao tem jeito so da erro, gostaria muito que fizesse o seguinte nano painel que tem as categorias diarias, salvasse tufo as categorias com seus valores que listasse na tela e opçao de imprimir
+            </h1>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
             Controle despesas e receitas da casa em reais, com destaque forte para o que está
             vencendo, recorrência automática e leitura de boletos.
