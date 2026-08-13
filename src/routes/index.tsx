@@ -37,7 +37,7 @@ const recursos = [
     icon: ScanLine,
     titulo: "Boleto e Pix",
     texto:
-      "podemos tentar de outra forma vou passar e tente fazer as modificações   Opção 1: Ajustar o domínio de teste (Mais rápido)\nSe você está usando o Resend (API muito comum em projetos do Lovable):\n\nPara testes, utilize o remetente padrão fornecido por eles:\n\nonboarding@resend.dev\n\nAltere no seu código do Lovable / Supabase Edge Function o campo from para onboarding@resend.dev.\n\n(Nota: Na conta gratuita do Resend, usando o e-mail de teste, você só consegue enviar e-mails para o mesmo endereço com o qual se cadastrou no Resend).",
+      "nada feito tente essa opçao   Host: smtp.gmail.com\n\nPorta: 587 (ou 465)\n\nUsuário: seu-email@gmail.com\n\nSenha: A senha de app gerada no passo 3 (não use sua senha normal do Gmail).",
   },
 ];
 
