@@ -36,7 +36,7 @@ const recursos = [
   {
     icon: ScanLine,
     titulo: "Boleto e Pix",
-    texto: "nao precisa abrir watza apenas coloque um aviso de enviar para o watzao informado o aviso direto sem abrir o watzap",
+    texto: "api.whatsapp.com está bloqueado, nao consigo saber se o teste para o watzao esta funcionando ele da essa mensagem, muda a opçao de abrir watzap com resumo apenas deixe com enviar eatzao teste  para clicar em enviar",
   },
 ];
 
