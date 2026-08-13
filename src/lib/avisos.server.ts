@@ -826,17 +826,20 @@ export async function enviarResumo(
           definitivo: true,
         };
       }
-      const resposta = await sendLovableEmail(
-        {
-          to: perfil.notify_email!,
-          from: remetente(),
-          subject: resumo.assunto,
-          html: resumo.html,
-          text: resumo.texto,
-          label: `aviso-${opcoes.tipo}`,
-        },
-        { apiKey, idempotencyKey: `${perfil.id}:${opcoes.tipo}:${hoje}` },
-      );
+      const data = {
+        to: perfil.notify_email!,
+        from: remetente(),
+        subject: resumo.assunto,
+        html: resumo.html,
+        text: resumo.texto,
+        label: `aviso-${opcoes.tipo}`,
+      };
+      console.log(`[avisos:email] Enviando via Lovable: to=${data.to}, subject=${data.subject}`);
+      const resposta = await sendLovableEmail(data, {
+        apiKey,
+        idempotencyKey: `${perfil.id}:${opcoes.tipo}:${hoje}`,
+      });
+      console.log(`[avisos:email] Resposta Lovable: success=${resposta.success}, status=${resposta.status}`);
       if (resposta.success) return { enviado: true, status: "enviado", detalhe: resumo.assunto };
       return {
         enviado: false,
@@ -844,10 +847,12 @@ export async function enviarResumo(
         detalhe: resposta.status ?? "envio não confirmado",
       };
     } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`[avisos:email] Erro ao disparar e-mail para ${perfil.notify_email}:`, error);
       const detalhe = (
-        error instanceof Error
-          ? error.message
-          : "Falha ao enviar. Configure o domínio de e-mail do app."
+        msg.includes("API key") || msg.includes("Unauthorized") 
+          ? "Erro de autenticação na API de e-mail. Verifique a LOVABLE_API_KEY."
+          : msg
       ).slice(0, 500);
       return {
         enviado: false,
