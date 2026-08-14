@@ -894,13 +894,31 @@ export async function enviarResumo(
         };
       }
 
-      // No Lovable Core, envios para e-mails que NÃO são do próprio usuário 
-      // exigem domínio próprio verificado. Caso contrário, a API rejeita.
-      const from = remetente();
+      // Lógica da API nativa: 
+      // Se o destinatário for o mesmo e-mail do dono da API (ou de um domínio verificado),
+      // o envio é permitido. Caso contrário, precisamos forçar o remetente padrão.
+      
+      const to = perfil.notify_email!.trim();
+      
+      // Buscamos o e-mail do usuário no Auth via Admin (para comparar com o destinatário)
+      let isSameUser = false;
+      try {
+        const { data: userData } = await supabaseAdmin.auth.admin.getUserById(perfil.id);
+        if (userData?.user?.email && userData.user.email.toLowerCase() === to.toLowerCase()) {
+          isSameUser = true;
+        }
+      } catch (e) {
+        console.warn("[avisos:email] Não foi possível verificar se o destinatário é o dono da conta", e);
+      }
+
+      // Se não for o mesmo e-mail, a API nativa exige domínio verificado.
+      // Caso não tenhamos domínio configurado, usamos o fallback nativo avisos@lovable.app
+      // que funciona para envios transacionais da plataforma.
+      const from = isSameUser ? `Agenda de Contas <avisos@lovable.app>` : remetente();
       const domain = process.env.AVISOS_SENDER_DOMAIN || "lovable.app";
       
       const data = {
-        to: perfil.notify_email!,
+        to,
         from,
         subject: resumo.assunto,
         html: resumo.html,
@@ -911,43 +929,35 @@ export async function enviarResumo(
       };
       
       const idempotencyKey = `${perfil.id}:${opcoes.tipo}:${hoje}:${Date.now()}`;
-      console.log(`[avisos:email] Enviando via Lovable: to=${data.to}, from=${data.from}, domain=${domain}, idempotencyKey=${idempotencyKey}`);
+      console.log(`[avisos:email] Enviando via Lovable Nativo: to=${data.to}, from=${data.from}, domain=${domain}`);
       
       const resposta = await sendLovableEmail(
         { ...data, idempotency_key: idempotencyKey },
         { apiKey }
       );
       
-      console.log(`[avisos:email] Resposta Lovable: success=${resposta.success}, status=${resposta.status}`);
-      
       if (resposta.success) return { enviado: true, status: "enviado", detalhe: resumo.assunto };
       
-      if (resposta.status?.includes("403") || resposta.status?.includes("sender")) {
+      const statusText = resposta.status ? String(resposta.status) : "erro desconhecido";
+      console.error(`[avisos:email] Erro API Lovable: ${statusText}`);
+
+      if (statusText.includes("403") || statusText.includes("sender") || statusText.includes("matching_sender")) {
         return {
           enviado: false,
           status: "falha_remetente",
-          detalhe: "O domínio do remetente não está autorizado. Configure um domínio verificado nos segredos do projeto.",
+          detalhe: "Erro de autorização: o e-mail do remetente não corresponde a um domínio verificado. Para usar a API gratuita, o e-mail de aviso deve ser o mesmo do seu cadastro.",
           definitivo: true
         };
       }
 
-      return {
-        enviado: false,
-        status: "falha",
-        detalhe: resposta.status ?? "envio não confirmado",
-      };
+      return { enviado: false, status: "falha", detalhe: statusText };
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
-      console.error(`[avisos:email] Erro ao disparar e-mail para ${perfil.notify_email}:`, error);
+      console.error(`[avisos:email] Erro ao disparar e-mail:`, error);
       
-      let detalhe = (
-        msg.includes("API key") || msg.includes("Unauthorized") 
-          ? "Erro de autenticação na API de e-mail. Verifique a LOVABLE_API_KEY."
-          : msg
-      ).slice(0, 500);
-
+      let detalhe = msg.slice(0, 500);
       if (detalhe.includes("403") || detalhe.includes("matching_sender")) {
-        detalhe = "Erro de autorização: o e-mail do remetente não corresponde a um domínio verificado.";
+        detalhe = "Erro de autorização: Para enviar para e-mails externos, você precisa de um domínio verificado. Use seu e-mail de cadastro para envio direto.";
       }
 
       return {

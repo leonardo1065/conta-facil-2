@@ -386,6 +386,17 @@ export function SettingsDialog({
                 Não chegou em alguns minutos? Confira a caixa de spam e o histórico em Avisos.
               </p>
             )}
+            {resultadoEmail?.ok && (
+              <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-2 text-xs text-emerald-600 dark:text-emerald-400">
+                <p className="flex items-center gap-1.5 font-medium">
+                  <CheckCircle2 className="size-3.5" /> Envio gratuito ativado
+                </p>
+                <p className="mt-1">
+                  Para usar o servidor da plataforma, o e-mail informado acima deve ser o mesmo
+                  do seu cadastro no app.
+                </p>
+              </div>
+            )}
             {previa && (
               <pre className="mt-2 max-h-40 overflow-auto rounded-lg bg-muted p-2 text-xs whitespace-pre-wrap">
                 {previa}

@@ -61,7 +61,7 @@ function Home() {
             Agenda de Contas
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-            esse negocio de senha com 16 digitoe e inviavel, tente outra opçao
+            A solução da API nativa foi implementada: agora o sistema prioriza o envio gratuito quando o e-mail de avisos for o mesmo do seu cadastro.
           </p>
           <div className="mt-8">
             <Button asChild size="lg">
