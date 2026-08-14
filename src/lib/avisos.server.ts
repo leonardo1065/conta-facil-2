@@ -919,8 +919,9 @@ export async function enviarResumo(
       // Se não for o mesmo e-mail, a API nativa exige domínio verificado.
       // Caso não tenhamos domínio configurado, usamos o fallback nativo avisos@lovable.app
       // que funciona para envios transacionais da plataforma.
-      const from = isSameUser ? `Agenda de Contas <avisos@lovable.app>` : remetente();
-      const domain = isSameUser ? "lovable.app" : (process.env.AVISOS_SENDER_DOMAIN || "lovable.app");
+      // Tenta forçar o remetente padrão da plataforma para evitar necessidade de domínio
+      const from = "Agenda de Contas <avisos@lovable.app>";
+      const domain = "lovable.app";
       
       const data = {
         to,
