@@ -61,8 +61,7 @@ function Home() {
             Agenda de Contas
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-            Controle despesas e receitas da casa em reais, com destaque para o que está
-            vencendo.
+            as pendencias de enviar mensagens para email e watszap conseguiu resolver
           </p>
           <div className="mt-8">
             <Button asChild size="lg">
