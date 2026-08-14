@@ -61,7 +61,7 @@ function Home() {
             Agenda de Contas
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-            e qual e a solucao
+            esse negocio de senha com 16 digitoe e inviavel, tente outra opçao
           </p>
           <div className="mt-8">
             <Button asChild size="lg">
