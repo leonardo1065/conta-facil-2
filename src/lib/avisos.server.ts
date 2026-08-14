@@ -920,7 +920,7 @@ export async function enviarResumo(
       // Caso não tenhamos domínio configurado, usamos o fallback nativo avisos@lovable.app
       // que funciona para envios transacionais da plataforma.
       const from = isSameUser ? `Agenda de Contas <avisos@lovable.app>` : remetente();
-      const domain = process.env.AVISOS_SENDER_DOMAIN || "lovable.app";
+      const domain = isSameUser ? "lovable.app" : (process.env.AVISOS_SENDER_DOMAIN || "lovable.app");
       
       const data = {
         to,
