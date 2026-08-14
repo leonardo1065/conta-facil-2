@@ -61,7 +61,7 @@ function Home() {
             Agenda de Contas
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-            as pendencias de enviar mensagens para email e watszap conseguiu resolver
+            esta dando esse erro     https://github.com/leonardo1065/lotto-hot-picks.git
           </p>
           <div className="mt-8">
             <Button asChild size="lg">
