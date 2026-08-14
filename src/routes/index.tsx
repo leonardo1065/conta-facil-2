@@ -61,7 +61,7 @@ function Home() {
             Agenda de Contas
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-            por favor implemente essa solução da API
+            A solução da API gratuita foi implementada.
           </p>
           <div className="mt-8">
             <Button asChild size="lg">
