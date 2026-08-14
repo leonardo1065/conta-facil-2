@@ -61,7 +61,7 @@ function Home() {
             Agenda de Contas
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-            Erro de autorização: o e-mail do remetente não corresponde a um domínio verificado.
+            como estou fazendo este projeto no brave , seria esse o motivo de bloqueio de enviar o email
           </p>
           <div className="mt-8">
             <Button asChild size="lg">
