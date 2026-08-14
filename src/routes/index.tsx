@@ -61,7 +61,7 @@ function Home() {
             Agenda de Contas
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-            continua dando o erro que nao e possivel enviar, por sms e mais facil ou tem restriçoes
+            desisto eu nao vou comprar um doninio
           </p>
           <div className="mt-8">
             <Button asChild size="lg">
