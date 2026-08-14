@@ -61,7 +61,7 @@ function Home() {
             Agenda de Contas
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-            A solução da API nativa foi implementada: agora o sistema prioriza o envio gratuito quando o e-mail de avisos for o mesmo do seu cadastro.
+            continua dando o mesmo erro Erro de autorização: Para enviar para e-mails externos, você precisa de um domínio verificado. Use seu e-mail de cadastro para envio direto.
           </p>
           <div className="mt-8">
             <Button asChild size="lg">
