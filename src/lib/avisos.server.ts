@@ -903,8 +903,13 @@ export async function enviarResumo(
       // Buscamos o e-mail do usuário no Auth via Admin (para comparar com o destinatário)
       let isSameUser = false;
       try {
-        const { data: userData } = await supabaseAdmin.auth.admin.getUserById(perfil.id);
-        if (userData?.user?.email && userData.user.email.toLowerCase() === to.toLowerCase()) {
+        const { data: userData, error: authError } = await supabaseAdmin.auth.admin.getUserById(perfil.id);
+        if (authError) throw authError;
+        
+        const registeredEmail = userData?.user?.email;
+        console.log(`[avisos:email] Comparando: to=${to.toLowerCase()}, registered=${registeredEmail?.toLowerCase()}`);
+        
+        if (registeredEmail && registeredEmail.toLowerCase() === to.toLowerCase()) {
           isSameUser = true;
         }
       } catch (e) {
@@ -915,7 +920,7 @@ export async function enviarResumo(
       // Caso não tenhamos domínio configurado, usamos o fallback nativo avisos@lovable.app
       // que funciona para envios transacionais da plataforma.
       const from = isSameUser ? `Agenda de Contas <avisos@lovable.app>` : remetente();
-      const domain = process.env.AVISOS_SENDER_DOMAIN || "lovable.app";
+      const domain = isSameUser ? "lovable.app" : (process.env.AVISOS_SENDER_DOMAIN || "lovable.app");
       
       const data = {
         to,
