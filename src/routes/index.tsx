@@ -61,7 +61,7 @@ function Home() {
             Agenda de Contas
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-            esta dando esse erro     https://github.com/leonardo1065/lotto-hot-picks.git
+            Erro de autorização: o e-mail do remetente não corresponde a um domínio verificado.
           </p>
           <div className="mt-8">
             <Button asChild size="lg">
