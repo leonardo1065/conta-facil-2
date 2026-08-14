@@ -57,15 +57,12 @@ function Home() {
 
       <main className="mx-auto max-w-5xl px-4 pb-24">
         <section className="py-14 text-center sm:py-20">
-          <p className="text-sm font-medium tracking-wide text-primary uppercase">
-            Financeiro doméstico
-          </p>
-            <h1 className="mx-auto mt-3 max-w-2xl text-4xl leading-tight font-bold sm:text-5xl">
-              beleza chega por hoje amanha continuamos
-            </h1>
+          <h1 className="mx-auto mt-3 max-w-2xl text-4xl leading-tight font-bold sm:text-5xl">
+            Agenda de Contas
+          </h1>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-            Controle despesas e receitas da casa em reais, com destaque forte para o que está
-            vencendo, recorrência automática e leitura de boletos.
+            Controle despesas e receitas da casa em reais, com destaque para o que está
+            vencendo.
           </p>
           <div className="mt-8">
             <Button asChild size="lg">
