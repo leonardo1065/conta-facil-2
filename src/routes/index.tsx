@@ -61,7 +61,7 @@ function Home() {
             Agenda de Contas
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-            continua dando o mesmo erro Erro de autorização: Para enviar para e-mails externos, você precisa de um domínio verificado. Use seu e-mail de cadastro para envio direto.
+            continua dando o erro que nao e possivel enviar, por sms e mais facil ou tem restriçoes
           </p>
           <div className="mt-8">
             <Button asChild size="lg">
