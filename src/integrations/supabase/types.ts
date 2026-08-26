@@ -136,14 +136,17 @@ export type Database = {
           district: string | null
           done: boolean
           id: string
+          is_recurring: boolean
           kind: string
           notes: string | null
           number: string | null
           phone: string | null
           place_name: string | null
           place_type: string
+          recurrence_interval_months: number
           scheduled_date: string
           scheduled_time: string | null
+          series_id: string | null
           state: string | null
           street: string | null
           title: string
@@ -158,14 +161,17 @@ export type Database = {
           district?: string | null
           done?: boolean
           id?: string
+          is_recurring?: boolean
           kind?: string
           notes?: string | null
           number?: string | null
           phone?: string | null
           place_name?: string | null
           place_type?: string
+          recurrence_interval_months?: number
           scheduled_date: string
           scheduled_time?: string | null
+          series_id?: string | null
           state?: string | null
           street?: string | null
           title: string
@@ -180,14 +186,17 @@ export type Database = {
           district?: string | null
           done?: boolean
           id?: string
+          is_recurring?: boolean
           kind?: string
           notes?: string | null
           number?: string | null
           phone?: string | null
           place_name?: string | null
           place_type?: string
+          recurrence_interval_months?: number
           scheduled_date?: string
           scheduled_time?: string | null
+          series_id?: string | null
           state?: string | null
           street?: string | null
           title?: string
