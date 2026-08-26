@@ -238,6 +238,30 @@ export function EntryDialog({ open, onOpenChange, entry, defaultDate }: Props) {
               </Select>
             </div>
 
+            {!entry &&
+              categoriasFiltradas
+                .find((c) => c.id === form.category_id)
+                ?.name.toLowerCase()
+                .normalize("NFD")
+                .replace(/[̀-ͯ]/g, "")
+                .includes("saude") && (
+                <label className="flex items-center gap-2 rounded-2xl border border-border/70 p-3 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 accent-primary"
+                    checked={recorrencia.mode === "recorrente" && recorrencia.unit === "mes"}
+                    onChange={(e) =>
+                      setRecorrencia(
+                        e.target.checked
+                          ? { ...recorrencia, mode: "recorrente", unit: "mes", intervalMonths: 1 }
+                          : { ...recorrencia, mode: "nenhuma" }
+                      )
+                    }
+                  />
+                  Repetir todo mês (retorno mensal)
+                </label>
+              )}
+
             {!entry && (
               <div className="space-y-3 rounded-2xl border border-border/70 p-3">
                 <div className="space-y-2">
