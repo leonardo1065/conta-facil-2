@@ -308,6 +308,78 @@ export async function montarResumoVencimento(
   return { assunto, texto, html, vazio };
 }
 
+const ROTULO_SAUDE: Record<string, string> = {
+  consulta: "Consulta",
+  exame: "Exame",
+  remedio: "Retirada de remédio",
+};
+
+/**
+ * Resumo específico de saúde: compromissos (consultas, exames, retirada de
+ * remédios) marcados para amanhã (véspera) ou para hoje.
+ */
+export async function montarResumoSaude(
+  perfil: AvisoPerfil,
+  quando: "amanha" | "hoje",
+): Promise<AvisoResumo> {
+  const hoje = todayISO();
+  const alvo = quando === "hoje" ? hoje : addDays(hoje, 1);
+
+  const { data, error } = await supabaseAdmin
+    .from("health_events")
+    .select("title, kind, scheduled_date, scheduled_time, place_name")
+    .eq("user_id", perfil.id)
+    .eq("done", false)
+    .eq("scheduled_date", alvo)
+    .order("scheduled_time", { ascending: true, nullsFirst: true });
+  if (error) throw error;
+
+  const eventos = (data ?? []) as SaudeAviso[];
+  const vazio = eventos.length === 0;
+  const titulo =
+    quando === "hoje" ? `Saúde hoje (${formatDate(alvo)})` : `Saúde amanhã (${formatDate(alvo)})`;
+  const assunto = vazio
+    ? `Agenda de Contas — nenhum compromisso de saúde ${quando === "hoje" ? "hoje" : "amanhã"}`
+    : `${quando === "hoje" ? "🩺 Saúde hoje" : "🩺 Saúde amanhã"}: ${eventos.length} compromisso(s)`;
+
+  const saudacao = perfil.display_name ? `Olá, ${perfil.display_name}!` : "Olá!";
+  const linhas = eventos.map(
+    (e) =>
+      `${ROTULO_SAUDE[e.kind] ?? e.kind}: ${e.title}${
+        e.scheduled_time ? ` às ${e.scheduled_time.slice(0, 5)}` : ""
+      }${e.place_name ? ` — ${e.place_name}` : ""}`,
+  );
+  const vazioTexto = `Nenhum compromisso de saúde em ${formatDate(alvo)}.`;
+  const texto = vazio
+    ? `${saudacao}\n\n${vazioTexto}`
+    : [saudacao, "", `${titulo}:`, ...linhas.map((l) => `• ${l}`)].join("\n");
+
+  const html = `<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#0f172a">
+  <h2 style="margin:0 0 12px">${titulo}</h2>
+  <p style="margin:0 0 16px">${saudacao}</p>
+  ${
+    vazio
+      ? `<p>${vazioTexto}</p>`
+      : `<ul style="margin:0;padding-left:18px">${linhas
+          .map((l) => `<li style="margin:2px 0">${l}</li>`)
+          .join("")}</ul>`
+  }
+</div>`;
+
+  if (!vazio && temTemplate(perfil)) {
+    const ctx = contextoTemplate(perfil, {
+      titulo,
+      data: formatDate(alvo),
+      itens: linhas,
+      quantidade: eventos.length,
+      total: 0,
+    });
+    const r = renderizarTemplate(perfil.email_subject_tpl, perfil.email_body_tpl, ctx);
+    return { ...r, vazio };
+  }
+
+  return { assunto, texto, html, vazio };
+}
 
 
 function remetente(): string {
