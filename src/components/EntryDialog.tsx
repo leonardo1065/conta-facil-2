@@ -243,7 +243,7 @@ export function EntryDialog({ open, onOpenChange, entry, defaultDate }: Props) {
                 .find((c) => c.id === form.category_id)
                 ?.name.toLowerCase()
                 .normalize("NFD")
-                .replace(/[̀-ͯ]/g, "")
+                .replace(/[\u0300-\u036f]/g, "")
                 .includes("saude") && (
                 <label className="flex items-center gap-2 rounded-2xl border border-border/70 p-3 text-sm cursor-pointer">
                   <input
