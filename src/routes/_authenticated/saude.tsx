@@ -126,8 +126,11 @@ function Saude() {
                   }}
                   onToggle={() =>
                     alternar.mutate(
-                      { id: e.id, done: !e.done },
-                      { onSuccess: () => toast.success("Marcado como concluído") },
+                      { event: e, done: !e.done },
+                      {
+                        onSuccess: (criouProximo) =>
+                          toast.success(criouProximo ? "Concluído e repetido para o próximo mês" : "Marcado como concluído"),
+                      },
                     )
                   }
                   onDelete={() => setParaExcluir(e)}
@@ -148,7 +151,7 @@ function Saude() {
                     setEmEdicao(e);
                     setDialogo(true);
                   }}
-                  onToggle={() => alternar.mutate({ id: e.id, done: !e.done })}
+                  onToggle={() => alternar.mutate({ event: e, done: !e.done })}
                   onDelete={() => setParaExcluir(e)}
                 />
               ))}
@@ -224,6 +227,11 @@ function Cartao({
           {isHoje && (
             <span className="rounded-full bg-warning px-2 py-0.5 text-[11px] font-bold text-warning-foreground">
               hoje
+            </span>
+          )}
+          {evento.is_recurring && (
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+              todo mês
             </span>
           )}
         </p>
