@@ -47,6 +47,8 @@ const vazio = (date: string) => ({
   city: "",
   state: "",
   notes: "",
+  is_recurring: false,
+  recurrence_interval_months: 1,
 });
 
 export function HealthDialog({ open, onOpenChange, event }: Props) {
@@ -74,6 +76,8 @@ export function HealthDialog({ open, onOpenChange, event }: Props) {
             city: event.city ?? "",
             state: event.state ?? "",
             notes: event.notes ?? "",
+            is_recurring: event.is_recurring,
+            recurrence_interval_months: event.recurrence_interval_months,
           }
         : vazio(todayISO()),
     );
@@ -128,6 +132,9 @@ export function HealthDialog({ open, onOpenChange, event }: Props) {
           state: form.state.trim() || null,
           notes: form.notes.trim() || null,
           done: event?.done ?? false,
+          is_recurring: form.is_recurring,
+          recurrence_interval_months: Math.max(1, Number(form.recurrence_interval_months) || 1),
+          series_id: event?.series_id ?? null,
         },
       });
       toast.success(event ? "Agendamento atualizado" : "Agendamento salvo");
@@ -304,6 +311,24 @@ export function HealthDialog({ open, onOpenChange, event }: Props) {
                 onChange={(e) => set("state", e.target.value.toUpperCase())}
               />
             </div>
+          </div>
+
+          <div className="space-y-1.5 sm:col-span-2">
+            <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-border/70 p-3 text-sm">
+              <input
+                type="checkbox"
+                className="h-4 w-4 accent-primary"
+                checked={form.is_recurring}
+                onChange={(e) => {
+                  setForm((f) => ({
+                    ...f,
+                    is_recurring: e.target.checked,
+                    recurrence_interval_months: 1,
+                  }));
+                }}
+              />
+              Repetir todo mês
+            </label>
           </div>
 
           <div className="space-y-1.5 sm:col-span-2">

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { addMonths } from "@/lib/dates";
 
 export type HealthKind = "consulta" | "exame" | "remedio";
 export type PlaceType = "clinica" | "hospital" | "farmacia" | "posto" | "laboratorio" | "outro";
@@ -23,6 +24,9 @@ export type HealthEvent = {
   state: string | null;
   notes: string | null;
   done: boolean;
+  is_recurring: boolean;
+  recurrence_interval_months: number;
+  series_id: string | null;
 };
 
 export const HEALTH_KIND_LABEL: Record<HealthKind, string> = {
@@ -112,9 +116,49 @@ export function useSaveHealthEvent() {
 export function useToggleHealthDone() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, done }: { id: string; done: boolean }) => {
-      const { error } = await supabase.from("health_events").update({ done }).eq("id", id);
+    mutationFn: async ({ event, done }: { event: HealthEvent; done: boolean }) => {
+      const seriesId = event.series_id ?? crypto.randomUUID();
+      const { error } = await supabase
+        .from("health_events")
+        .update({ done, series_id: seriesId })
+        .eq("id", event.id);
       if (error) throw error;
+
+      if (!done || !event.is_recurring) return false;
+
+      const proximaData = addMonths(event.scheduled_date, Math.max(1, event.recurrence_interval_months || 1));
+      const { data: existente } = await supabase
+        .from("health_events")
+        .select("id")
+        .eq("series_id", seriesId)
+        .eq("scheduled_date", proximaData)
+        .maybeSingle();
+      if (existente) return false;
+
+      const { error: insertError } = await supabase.from("health_events").insert({
+        user_id: event.user_id,
+        kind: event.kind,
+        title: event.title,
+        scheduled_date: proximaData,
+        scheduled_time: event.scheduled_time,
+        place_type: event.place_type,
+        place_name: event.place_name,
+        phone: event.phone,
+        cep: event.cep,
+        street: event.street,
+        number: event.number,
+        complement: event.complement,
+        district: event.district,
+        city: event.city,
+        state: event.state,
+        notes: event.notes,
+        done: false,
+        is_recurring: true,
+        recurrence_interval_months: event.recurrence_interval_months,
+        series_id: seriesId,
+      });
+      if (insertError) throw insertError;
+      return true;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["health_events"] }),
   });
