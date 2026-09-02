@@ -137,6 +137,10 @@ export function SettingsDialog({
     notify_enabled: true,
     notify_health: true,
     notify_whatsapp: false,
+    health_notify_email: "",
+    health_notify_whatsapp: "",
+    health_via_email: true,
+    health_via_whatsapp: false,
   });
 
   useEffect(() => {
@@ -151,6 +155,10 @@ export function SettingsDialog({
       notify_enabled: settings?.notify_enabled ?? true,
       notify_health: settings?.notify_health ?? true,
       notify_whatsapp: settings?.notify_whatsapp ?? false,
+      health_notify_email: settings?.health_notify_email ?? "",
+      health_notify_whatsapp: settings?.health_notify_whatsapp ?? "",
+      health_via_email: settings?.health_via_email ?? true,
+      health_via_whatsapp: settings?.health_via_whatsapp ?? false,
     });
   }, [open, settings]);
 
@@ -191,6 +199,21 @@ export function SettingsDialog({
       toast.error("Informe um número de WhatsApp válido com DDD");
       return;
     }
+    const emailSaude = form.health_notify_email.trim();
+    if (emailSaude && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(emailSaude)) {
+      toast.error("E-mail de avisos de saúde inválido");
+      return;
+    }
+    const whatsSaude = form.health_notify_whatsapp.trim();
+    const foneSaude = normalizarWhatsapp(whatsSaude);
+    if (whatsSaude && !foneSaude.valido) {
+      toast.error(foneSaude.motivo ?? "WhatsApp de avisos de saúde inválido");
+      return;
+    }
+    if (form.notify_health && form.health_via_whatsapp && !foneSaude.valido && !fone.valido) {
+      toast.error("Informe um WhatsApp válido para os avisos de saúde");
+      return;
+    }
     try {
       const smtp_config = null;
 
@@ -203,6 +226,10 @@ export function SettingsDialog({
         notify_enabled: form.notify_enabled,
         notify_health: form.notify_health,
         notify_whatsapp: form.notify_whatsapp,
+        health_notify_email: emailSaude || null,
+        health_notify_whatsapp: foneSaude.valido ? foneSaude.e164 : null,
+        health_via_email: form.health_via_email,
+        health_via_whatsapp: form.health_via_whatsapp,
         smtp_config,
       });
       toast.success("Configurações salvas");
@@ -339,6 +366,61 @@ export function SettingsDialog({
                   value={form.health_days_before}
                   onChange={(e) => setForm((f) => ({ ...f, health_days_before: e.target.value }))}
                 />
+              </div>
+            )}
+            {form.notify_health && (
+              <div className="space-y-3 rounded-xl bg-muted/40 p-3">
+                <p className="text-xs text-muted-foreground">
+                  Escolha para quais contatos os avisos de saúde devem ir. Deixe em branco para
+                  usar o e-mail e o WhatsApp principais.
+                </p>
+
+                <div className="flex items-center justify-between gap-3">
+                  <Label htmlFor="health_via_email" className="flex items-center gap-2 text-sm">
+                    <Mail className="size-4" /> Enviar avisos de saúde por e-mail
+                  </Label>
+                  <Switch
+                    id="health_via_email"
+                    checked={form.health_via_email}
+                    onCheckedChange={(v) => setForm((f) => ({ ...f, health_via_email: v }))}
+                    aria-label="Enviar avisos de saúde por e-mail"
+                  />
+                </div>
+                {form.health_via_email && (
+                  <Input
+                    id="health_notify_email"
+                    type="email"
+                    inputMode="email"
+                    placeholder={form.notify_email.trim() || "email@exemplo.com"}
+                    value={form.health_notify_email}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, health_notify_email: e.target.value }))
+                    }
+                  />
+                )}
+
+                <div className="flex items-center justify-between gap-3">
+                  <Label htmlFor="health_via_whatsapp" className="flex items-center gap-2 text-sm">
+                    <MessageCircle className="size-4" /> Enviar avisos de saúde por WhatsApp
+                  </Label>
+                  <Switch
+                    id="health_via_whatsapp"
+                    checked={form.health_via_whatsapp}
+                    onCheckedChange={(v) => setForm((f) => ({ ...f, health_via_whatsapp: v }))}
+                    aria-label="Enviar avisos de saúde por WhatsApp"
+                  />
+                </div>
+                {form.health_via_whatsapp && (
+                  <Input
+                    id="health_notify_whatsapp"
+                    inputMode="tel"
+                    placeholder={form.whatsapp.trim() || "(11) 90000-0000"}
+                    value={form.health_notify_whatsapp}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, health_notify_whatsapp: e.target.value }))
+                    }
+                  />
+                )}
               </div>
             )}
           </div>
