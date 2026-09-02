@@ -102,6 +102,7 @@ export const Route = createFileRoute("/api/public/hooks/avisos")({
           enviados,
           reenviados,
           vencimentos,
+          saude,
           ignorados,
           falhas,
         });
