@@ -26,6 +26,7 @@ export const Route = createFileRoute("/api/public/hooks/avisos")({
           jaEnviadoHoje,
           pararTentativasHoje,
           enviarAvisosVencimento,
+          enviarAvisosSaude,
         } = await import("@/lib/avisos.server");
 
         const hora = horaSaoPaulo();
