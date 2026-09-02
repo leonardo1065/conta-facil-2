@@ -887,7 +887,9 @@ export type TipoAviso =
   | "teste"
   | "vencimento_d1"
   | "vencimento_d0"
-  | "vencido";
+  | "vencido"
+  | "saude_d1"
+  | "saude_d0";
 
 const KIND_POR_TIPO: Record<TipoAviso, string> = {
   diario: "aviso_diario",
@@ -895,7 +897,8 @@ const KIND_POR_TIPO: Record<TipoAviso, string> = {
   vencimento_d1: "aviso_vencimento_d1",
   vencimento_d0: "aviso_vencimento_d0",
   vencido: "aviso_vencido",
-
+  saude_d1: "aviso_saude_d1",
+  saude_d0: "aviso_saude_d0",
 };
 
 /**
