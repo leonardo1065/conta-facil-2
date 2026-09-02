@@ -1098,6 +1098,33 @@ export async function enviarAvisosVencimento(perfil: AvisoPerfil): Promise<
   return saidas;
 }
 
+/**
+ * Envia os avisos de saúde: consultas, exames e retirada de remédios
+ * marcados para amanhã (véspera) e para hoje. Um envio por dia de cada tipo.
+ */
+export async function enviarAvisosSaude(perfil: AvisoPerfil): Promise<
+  { tipo: TipoAviso; enviado: boolean; status: string; detalhe: string }[]
+> {
+  if (!perfil.notify_health) return [];
+
+  const etapas: { tipo: TipoAviso; quando: "amanha" | "hoje" }[] = [
+    { tipo: "saude_d1", quando: "amanha" },
+    { tipo: "saude_d0", quando: "hoje" },
+  ];
+
+  const saidas: { tipo: TipoAviso; enviado: boolean; status: string; detalhe: string }[] = [];
+  for (const etapa of etapas) {
+    if (await jaEnviadoKindHoje(perfil.id, KIND_POR_TIPO[etapa.tipo])) continue;
+    const resumo = await montarResumoSaude(perfil, etapa.quando);
+    if (resumo.vazio) continue;
+    const r = await enviarResumo(perfil, { tipo: etapa.tipo, resumo });
+    saidas.push({ tipo: etapa.tipo, enviado: r.enviado, status: r.status, detalhe: r.detalhe });
+  }
+  return saidas;
+}
+
+
+
 export async function jaEnviadoHoje(userId: string): Promise<boolean> {
   const { data, error } = await supabaseAdmin
     .from("notification_log")
