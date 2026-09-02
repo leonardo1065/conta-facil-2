@@ -248,6 +248,10 @@ export type Database = {
           email_body_tpl: string | null
           email_subject_tpl: string | null
           health_days_before: number
+          health_notify_email: string | null
+          health_notify_whatsapp: string | null
+          health_via_email: boolean
+          health_via_whatsapp: boolean
           id: string
           notify_days_before: number
           notify_email: string | null
@@ -265,6 +269,10 @@ export type Database = {
           email_body_tpl?: string | null
           email_subject_tpl?: string | null
           health_days_before?: number
+          health_notify_email?: string | null
+          health_notify_whatsapp?: string | null
+          health_via_email?: boolean
+          health_via_whatsapp?: boolean
           id: string
           notify_days_before?: number
           notify_email?: string | null
@@ -282,6 +290,10 @@ export type Database = {
           email_body_tpl?: string | null
           email_subject_tpl?: string | null
           health_days_before?: number
+          health_notify_email?: string | null
+          health_notify_whatsapp?: string | null
+          health_via_email?: boolean
+          health_via_whatsapp?: boolean
           id?: string
           notify_days_before?: number
           notify_email?: string | null
