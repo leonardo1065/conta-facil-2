@@ -53,6 +53,8 @@ const KIND_LABEL: Record<string, string> = {
   aviso_vencimento_d1: "Vence amanhã",
   aviso_vencimento_d0: "Vence hoje",
   aviso_vencido: "Contas vencidas",
+  aviso_saude_d1: "Saúde amanhã",
+  aviso_saude_d0: "Saúde hoje",
 };
 
 
