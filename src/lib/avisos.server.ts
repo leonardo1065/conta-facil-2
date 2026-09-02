@@ -19,6 +19,10 @@ export type AvisoPerfil = {
   notify_hour: number;
   health_days_before: number;
   notify_whatsapp: boolean;
+  health_notify_email: string | null;
+  health_notify_whatsapp: string | null;
+  health_via_email: boolean;
+  health_via_whatsapp: boolean;
   email_subject_tpl: string | null;
   email_body_tpl: string | null;
   smtp_config: {
@@ -37,7 +41,7 @@ export type AvisoResumo = {
 };
 
 const PERFIL_COLS =
-  "id, display_name, notify_email, whatsapp, notify_days_before, notify_enabled, notify_health, notify_hour, health_days_before, notify_whatsapp, email_subject_tpl, email_body_tpl, smtp_config";
+  "id, display_name, notify_email, whatsapp, notify_days_before, notify_enabled, notify_health, notify_hour, health_days_before, notify_whatsapp, health_notify_email, health_notify_whatsapp, health_via_email, health_via_whatsapp, email_subject_tpl, email_body_tpl, smtp_config";
 
 /** Hora atual (0-23) no fuso America/Sao_Paulo. */
 export function horaSaoPaulo(): number {
@@ -1107,6 +1111,20 @@ export async function enviarAvisosSaude(perfil: AvisoPerfil): Promise<
 > {
   if (!perfil.notify_health) return [];
 
+  // Contatos específicos de saúde: quando em branco, herdam os contatos gerais.
+  const destino: AvisoPerfil = {
+    ...perfil,
+    notify_email: perfil.health_via_email
+      ? (perfil.health_notify_email?.trim() || perfil.notify_email)
+      : null,
+    whatsapp: perfil.health_notify_whatsapp?.trim() || perfil.whatsapp,
+    notify_whatsapp: Boolean(
+      perfil.health_via_whatsapp &&
+        (perfil.health_notify_whatsapp?.trim() || perfil.whatsapp),
+    ),
+  };
+  if (!destino.notify_email && !destino.notify_whatsapp) return [];
+
   const etapas: { tipo: TipoAviso; quando: "amanha" | "hoje" }[] = [
     { tipo: "saude_d1", quando: "amanha" },
     { tipo: "saude_d0", quando: "hoje" },
@@ -1117,7 +1135,7 @@ export async function enviarAvisosSaude(perfil: AvisoPerfil): Promise<
     if (await jaEnviadoKindHoje(perfil.id, KIND_POR_TIPO[etapa.tipo])) continue;
     const resumo = await montarResumoSaude(perfil, etapa.quando);
     if (resumo.vazio) continue;
-    const r = await enviarResumo(perfil, { tipo: etapa.tipo, resumo });
+    const r = await enviarResumo(destino, { tipo: etapa.tipo, resumo });
     saidas.push({ tipo: etapa.tipo, enviado: r.enviado, status: r.status, detalhe: r.detalhe });
   }
   return saidas;
