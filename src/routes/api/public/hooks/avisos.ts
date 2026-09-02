@@ -46,6 +46,7 @@ export const Route = createFileRoute("/api/public/hooks/avisos")({
         let ignorados = 0;
         let reenviados = 0;
         let vencimentos = 0;
+        let saude = 0;
         const falhas: string[] = [];
 
         for (const perfil of [...perfis, ...reenvios]) {
@@ -60,6 +61,17 @@ export const Route = createFileRoute("/api/public/hooks/avisos")({
                 falhas.push(`${perfil.id} ${v.tipo}: ${v.status} — ${v.detalhe}`);
               }
             }
+
+            // Avisos de saúde: consultas, exames e retirada de remédios (véspera e no dia).
+            for (const s of await enviarAvisosSaude(perfil)) {
+              if (s.enviado) {
+                saude++;
+              } else {
+                console.warn(`[hook:avisos] Falha aviso saúde usuário ${perfil.id}: ${s.status}`);
+                falhas.push(`${perfil.id} ${s.tipo}: ${s.status} — ${s.detalhe}`);
+              }
+            }
+
 
             if (ehReenvio ? await pararTentativasHoje(perfil.id) : await jaEnviadoHoje(perfil.id)) {
               ignorados++;
