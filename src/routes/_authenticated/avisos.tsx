@@ -9,11 +9,14 @@ import {
   MessageCircle,
   RefreshCw,
   Send,
+  Trash2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { NowCard } from "@/components/NowCard";
-import { logsAvisos } from "@/lib/avisos.functions";
+import { logsAvisos, limparLogsAvisos } from "@/lib/avisos.functions";
 import { cn } from "@/lib/utils";
+
 
 export const Route = createFileRoute("/_authenticated/avisos")({
   head: () => ({
@@ -94,12 +97,28 @@ function formatarQuando(iso: string) {
 
 function AvisosPage() {
   const buscar = useServerFn(logsAvisos);
+  const limpar = useServerFn(limparLogsAvisos);
   const [filtro, setFiltro] = useState<(typeof FILTROS)[number]["id"]>("todos");
+  const [limpando, setLimpando] = useState<"falhas" | "todos" | null>(null);
 
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["logs-avisos"],
     queryFn: () => buscar({ data: undefined }),
   });
+
+  async function limparLogs(escopo: "falhas" | "todos") {
+    setLimpando(escopo);
+    try {
+      await limpar({ data: { escopo } });
+      await refetch();
+      toast.success(escopo === "todos" ? "Histórico apagado." : "Avisos com falha apagados.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível limpar agora.");
+    } finally {
+      setLimpando(null);
+    }
+  }
+
 
   const itens = data?.itens ?? [];
   const lista = useMemo(() => {
@@ -142,6 +161,29 @@ function AvisosPage() {
               <RefreshCw className={cn("size-4", isFetching && "animate-spin")} />
               Atualizar
             </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-2"
+              disabled={limpando !== null || falhas === 0}
+              onClick={() => limparLogs("falhas")}
+            >
+              <Trash2 className="size-4" />
+              {limpando === "falhas" ? "Limpando…" : "Limpar falhas"}
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              className="gap-2"
+              disabled={limpando !== null || itens.length === 0}
+              onClick={() => {
+                if (confirm("Apagar todo o histórico de avisos?")) limparLogs("todos");
+              }}
+            >
+              <Trash2 className="size-4" />
+              {limpando === "todos" ? "Limpando…" : "Limpar tudo"}
+            </Button>
+
           </div>
         </div>
         <NowCard />
