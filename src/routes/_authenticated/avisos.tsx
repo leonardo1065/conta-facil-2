@@ -9,11 +9,14 @@ import {
   MessageCircle,
   RefreshCw,
   Send,
+  Trash2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { NowCard } from "@/components/NowCard";
-import { logsAvisos } from "@/lib/avisos.functions";
+import { logsAvisos, limparLogsAvisos } from "@/lib/avisos.functions";
 import { cn } from "@/lib/utils";
+
 
 export const Route = createFileRoute("/_authenticated/avisos")({
   head: () => ({
