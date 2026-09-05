@@ -82,6 +82,29 @@ function Diarias() {
     0,
   );
 
+  // Histórico: todos os meses já registrados (inclusive o atual), com detalhe por gasto.
+  const historico = useMemo(() => {
+    const meses = new Map<string, { total: number; itens: { nome: string; valor: number }[] }>();
+    for (const e of entries ?? []) {
+      if (!e.is_avulsa) continue;
+      const mes = e.month_ref ?? e.due_date.slice(0, 7);
+      const atual = meses.get(mes) ?? { total: 0, itens: [] };
+      atual.total += Number(e.amount);
+      atual.itens.push({ nome: e.description, valor: Number(e.amount) });
+      meses.set(mes, atual);
+    }
+    return [...meses.entries()]
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .map(([mes, dados]) => ({
+        mes,
+        total: dados.total,
+        itens: dados.itens.sort((a, b) => b.valor - a.valor),
+      }));
+  }, [entries]);
+
+  const [mesAberto, setMesAberto] = useState<string | null>(null);
+
+
   async function criar(desc: string) {
     const descricao = desc.trim();
     if (!descricao) {
