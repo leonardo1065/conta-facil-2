@@ -82,6 +82,29 @@ function Diarias() {
     0,
   );
 
+  // Histórico: todos os meses já registrados (inclusive o atual), com detalhe por gasto.
+  const historico = useMemo(() => {
+    const meses = new Map<string, { total: number; itens: { nome: string; valor: number }[] }>();
+    for (const e of entries ?? []) {
+      if (!e.is_avulsa) continue;
+      const mes = e.month_ref ?? e.due_date.slice(0, 7);
+      const atual = meses.get(mes) ?? { total: 0, itens: [] };
+      atual.total += Number(e.amount);
+      atual.itens.push({ nome: e.description, valor: Number(e.amount) });
+      meses.set(mes, atual);
+    }
+    return [...meses.entries()]
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .map(([mes, dados]) => ({
+        mes,
+        total: dados.total,
+        itens: dados.itens.sort((a, b) => b.valor - a.valor),
+      }));
+  }, [entries]);
+
+  const [mesAberto, setMesAberto] = useState<string | null>(null);
+
+
   async function criar(desc: string) {
     const descricao = desc.trim();
     if (!descricao) {
@@ -227,6 +250,46 @@ function Diarias() {
           })}
         </div>
       )}
+
+      {historico.length > 0 && (
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-soft print:border-none print:shadow-none print:p-0">
+          <h2 className="text-lg font-semibold">Histórico de gastos por mês</h2>
+          <p className="text-sm text-muted-foreground print:hidden">
+            Tudo o que já foi lançado fica guardado aqui, mês a mês. Toque em um mês para ver
+            os detalhes.
+          </p>
+          <ul className="mt-4 divide-y divide-border">
+            {historico.map((h) => {
+              const [ano, mes] = h.mes.split("-").map(Number);
+              const rotulo = formatMonth(new Date(ano ?? 2026, (mes ?? 1) - 1, 1));
+              const aberto = mesAberto === h.mes || h.mes === ref;
+              return (
+                <li key={h.mes} className="py-2">
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between gap-3 text-left"
+                    onClick={() => setMesAberto(aberto && h.mes !== ref ? null : h.mes)}
+                  >
+                    <span className="font-medium">{rotulo}</span>
+                    <span className="font-semibold">{formatBRL(h.total)}</span>
+                  </button>
+                  {aberto && (
+                    <ul className="mt-2 space-y-1 pl-1 text-sm text-muted-foreground print:text-black">
+                      {h.itens.map((i, idx) => (
+                        <li key={`${h.mes}-${idx}`} className="flex justify-between gap-3">
+                          <span>{i.nome}</span>
+                          <span>{formatBRL(i.valor)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
 
       <Dialog open={novo} onOpenChange={setNovo}>
         <DialogContent className="sm:max-w-sm">
