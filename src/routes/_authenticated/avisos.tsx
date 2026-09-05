@@ -94,12 +94,28 @@ function formatarQuando(iso: string) {
 
 function AvisosPage() {
   const buscar = useServerFn(logsAvisos);
+  const limpar = useServerFn(limparLogsAvisos);
   const [filtro, setFiltro] = useState<(typeof FILTROS)[number]["id"]>("todos");
+  const [limpando, setLimpando] = useState<"falhas" | "todos" | null>(null);
 
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["logs-avisos"],
     queryFn: () => buscar({ data: undefined }),
   });
+
+  async function limparLogs(escopo: "falhas" | "todos") {
+    setLimpando(escopo);
+    try {
+      await limpar({ data: { escopo } });
+      await refetch();
+      toast.success(escopo === "todos" ? "Histórico apagado." : "Avisos com falha apagados.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível limpar agora.");
+    } finally {
+      setLimpando(null);
+    }
+  }
+
 
   const itens = data?.itens ?? [];
   const lista = useMemo(() => {
