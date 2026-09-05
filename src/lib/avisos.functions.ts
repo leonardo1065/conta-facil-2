@@ -117,3 +117,22 @@ export const logsAvisos = createServerFn({ method: "POST" })
       itens: logs.data ?? [],
     };
   });
+
+/** Limpa o histórico de avisos: só as falhas ou tudo. */
+export const limparLogsAvisos = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { escopo?: "falhas" | "todos" } | undefined) => ({
+    escopo: input?.escopo === "todos" ? ("todos" as const) : ("falhas" as const),
+  }))
+  .handler(async ({ data, context }) => {
+    let q = context.supabase
+      .from("notification_log")
+      .delete()
+      .eq("user_id", context.userId);
+    if (data.escopo === "falhas") {
+      q = q.not("status", "in", "(enviado,ok,sucesso)");
+    }
+    const { error } = await q;
+    if (error) throw error;
+    return { ok: true, escopo: data.escopo };
+  });
