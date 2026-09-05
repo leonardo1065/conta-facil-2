@@ -161,6 +161,29 @@ function AvisosPage() {
               <RefreshCw className={cn("size-4", isFetching && "animate-spin")} />
               Atualizar
             </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-2"
+              disabled={limpando !== null || falhas === 0}
+              onClick={() => limparLogs("falhas")}
+            >
+              <Trash2 className="size-4" />
+              {limpando === "falhas" ? "Limpando…" : "Limpar falhas"}
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              className="gap-2"
+              disabled={limpando !== null || itens.length === 0}
+              onClick={() => {
+                if (confirm("Apagar todo o histórico de avisos?")) limparLogs("todos");
+              }}
+            >
+              <Trash2 className="size-4" />
+              {limpando === "todos" ? "Limpando…" : "Limpar tudo"}
+            </Button>
+
           </div>
         </div>
         <NowCard />
