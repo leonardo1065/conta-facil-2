@@ -442,6 +442,53 @@ export function SettingsDialog({
 
           <div className="space-y-2 rounded-xl border border-border/70 p-3">
             <p className="flex items-center gap-2 text-sm font-medium">
+              <Mail className="size-4" /> Conta do Gmail para enviar os avisos
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {verificandoGmail && !gmail
+                ? "Verificando…"
+                : gmail?.conectado
+                  ? gmail.detalhe
+                  : "Nenhuma conta do Gmail conectada. Ao conectar, os avisos saem da sua própria conta, sem senha de aplicativo."}
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant={gmail?.conectado ? "outline" : "default"}
+                size="sm"
+                className="gap-2"
+                disabled={verificandoGmail}
+                onClick={async () => {
+                  const { data } = await revalidarGmail();
+                  if (data?.conectado) {
+                    toast.success(data.detalhe);
+                  } else {
+                    toast.info("Gmail ainda não conectado", {
+                      description:
+                        "Peça no chat do Lovable: “conectar Gmail”. A janela de autorização do Google abre para você liberar o acesso.",
+                    });
+                  }
+                }}
+              >
+                <Mail className="size-4" />
+                {verificandoGmail
+                  ? "Verificando…"
+                  : gmail?.conectado
+                    ? "Verificar conexão"
+                    : "Conectar Gmail"}
+              </Button>
+              {gmail?.conectado && (
+                <span className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle2 className="size-3.5" /> Conectado
+                </span>
+              )}
+            </div>
+          </div>
+
+
+
+          <div className="space-y-2 rounded-xl border border-border/70 p-3">
+            <p className="flex items-center gap-2 text-sm font-medium">
               <Mail className="size-4" /> Testar envio por e-mail
             </p>
             <p className="text-xs text-muted-foreground">
