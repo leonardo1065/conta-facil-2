@@ -1171,3 +1171,50 @@ export async function pararTentativasHoje(userId: string): Promise<boolean> {
   return linhas.every((s) => s.startsWith("enviado") || STATUS_DEFINITIVOS.includes(s));
 }
 
+
+/** Diz se a conta do Gmail está conectada e qual endereço será usado no envio. */
+export async function verificarGmail(): Promise<{
+  conectado: boolean;
+  email: string | null;
+  detalhe: string;
+}> {
+  const lovableKey = process.env.LOVABLE_API_KEY;
+  const gmailKey = process.env.GOOGLE_MAIL_API_KEY;
+  if (!lovableKey || !gmailKey) {
+    return { conectado: false, email: null, detalhe: "Nenhuma conta do Gmail conectada." };
+  }
+  try {
+    const resposta = await fetch(
+      "https://connector-gateway.lovable.dev/google_mail/gmail/v1/users/me/profile",
+      {
+        headers: {
+          Authorization: `Bearer ${lovableKey}`,
+          "X-Connection-Api-Key": gmailKey,
+        },
+      },
+    );
+    const corpo = await resposta.text();
+    if (!resposta.ok) {
+      console.error(`[avisos] Gmail status falhou [${resposta.status}]: ${corpo}`);
+      return {
+        conectado: false,
+        email: null,
+        detalhe: `Conexão do Gmail com problema (${resposta.status}).`,
+      };
+    }
+    const json = JSON.parse(corpo) as { emailAddress?: string };
+    return {
+      conectado: true,
+      email: json.emailAddress ?? null,
+      detalhe: json.emailAddress
+        ? `Conectado como ${json.emailAddress}.`
+        : "Conta do Gmail conectada.",
+    };
+  } catch (error) {
+    return {
+      conectado: false,
+      email: null,
+      detalhe: error instanceof Error ? error.message.slice(0, 200) : "Erro desconhecido.",
+    };
+  }
+}

@@ -136,3 +136,11 @@ export const limparLogsAvisos = createServerFn({ method: "POST" })
     if (error) throw error;
     return { ok: true, escopo: data.escopo };
   });
+
+/** Diz se a conta do Gmail está conectada (sem expor credenciais). */
+export const statusGmail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const { verificarGmail } = await import("@/lib/avisos.server");
+    return verificarGmail();
+  });
