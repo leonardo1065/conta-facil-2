@@ -463,12 +463,13 @@ export function SettingsDialog({
                   if (data?.conectado) {
                     toast.success(data.detalhe);
                   } else {
-                    toast.info("Gmail ainda não conectado", {
+                    toast.info("Autorização do Google ainda não concluída", {
                       description:
-                        "Peça no chat do Lovable: “conectar Gmail”. A janela de autorização do Google abre para você liberar o acesso.",
+                        "Conclua a autorização da sua conta Google e toque em Conectar Gmail novamente para confirmar.",
                     });
                   }
                 }}
+
               >
                 <Mail className="size-4" />
                 {verificandoGmail
