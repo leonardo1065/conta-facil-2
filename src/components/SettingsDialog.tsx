@@ -62,6 +62,19 @@ export function SettingsDialog({
     enabled: open,
     staleTime: 60_000,
   });
+  const checarGmail = useServerFn(statusGmail);
+  const {
+    data: gmail,
+    isFetching: verificandoGmail,
+    refetch: revalidarGmail,
+  } = useQuery({
+    queryKey: ["status-gmail"],
+    queryFn: () => checarGmail({ data: undefined }),
+    enabled: open,
+    staleTime: 30_000,
+  });
+
+
 
   const [enviando, setEnviando] = useState(false);
   const [testandoZap, setTestandoZap] = useState(false);
