@@ -29,10 +29,12 @@ import { useSaveSettings, useSettings, whatsappLink } from "@/lib/settings";
 import { normalizarWhatsapp } from "@/lib/phone";
 import {
   enviarAvisoTeste,
+  statusGmail,
   statusWhatsapp,
   testarWhatsapp,
   validarWhatsapp,
 } from "@/lib/avisos.functions";
+
 
 
 
