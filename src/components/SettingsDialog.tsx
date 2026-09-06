@@ -449,7 +449,7 @@ export function SettingsDialog({
                 ? "Verificando…"
                 : gmail?.conectado
                   ? gmail.detalhe
-                  : "Nenhuma conta do Gmail conectada. Ao conectar, os avisos saem da sua própria conta, sem senha de aplicativo."}
+                  : "Ainda sem conta do Gmail autorizada. A autorização é feita uma única vez pelo cartão “Conectar Gmail” que aparece na conversa do assistente; depois use o botão abaixo para confirmar aqui."}
             </p>
             <div className="flex flex-wrap items-center gap-2">
               <Button
@@ -465,7 +465,7 @@ export function SettingsDialog({
                   } else {
                     toast.info("Autorização do Google ainda não concluída", {
                       description:
-                        "Conclua a autorização da sua conta Google e toque em Conectar Gmail novamente para confirmar.",
+                        "Peça “conectar Gmail” na conversa do assistente e conclua o login do Google no cartão que aparecer. Depois volte aqui e toque em Verificar conexão.",
                     });
                   }
                 }}
@@ -476,8 +476,9 @@ export function SettingsDialog({
                   ? "Verificando…"
                   : gmail?.conectado
                     ? "Verificar conexão"
-                    : "Conectar Gmail"}
+                    : "Verificar conexão do Gmail"}
               </Button>
+
               {gmail?.conectado && (
                 <span className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
                   <CheckCircle2 className="size-3.5" /> Conectado
