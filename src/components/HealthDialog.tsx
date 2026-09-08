@@ -306,11 +306,40 @@ export function HealthDialog({ open, onOpenChange, event }: Props) {
 
           <div className="space-y-1.5 sm:col-span-2">
             <Label htmlFor="street">Logradouro</Label>
-            <Input
-              id="street"
-              value={form.street}
-              onChange={(e) => set("street", e.target.value)}
-            />
+            <div className="flex gap-2">
+              <Input
+                id="street"
+                placeholder="Av. Paulista"
+                value={form.street}
+                onChange={(e) => set("street", e.target.value)}
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={buscandoEndereco}
+                onClick={buscarPorEndereco}
+              >
+                <Search className="mr-2 size-4" />
+                {buscandoEndereco ? "Buscando..." : "Buscar CEP"}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Preencha cidade e UF abaixo e clique em “Buscar CEP” para achar o CEP pelo endereço.
+            </p>
+            {sugestoes.length > 0 && (
+              <div className="mt-1 max-h-44 space-y-1 overflow-y-auto rounded-lg border border-border/70 p-2">
+                {sugestoes.map((s, i) => (
+                  <button
+                    key={`${s.cep}-${i}`}
+                    type="button"
+                    className="w-full rounded-md p-2 text-left text-sm hover:bg-muted"
+                    onClick={() => escolherSugestao(s)}
+                  >
+                    <span className="font-medium">{s.cep}</span> — {s.street}, {s.district} · {s.city}/{s.state}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="space-y-1.5">
