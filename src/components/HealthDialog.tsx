@@ -17,6 +17,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { todayISO } from "@/lib/dates";
 import {
   buscarCep,
+  buscarCepPorEndereco,
+  type Endereco,
   HEALTH_KIND_LABEL,
   PLACE_LABEL,
   useSaveHealthEvent,
