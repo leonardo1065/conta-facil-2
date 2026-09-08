@@ -57,6 +57,8 @@ export function HealthDialog({ open, onOpenChange, event }: Props) {
   const salvar = useSaveHealthEvent();
   const [form, setForm] = useState(vazio(todayISO()));
   const [buscando, setBuscando] = useState(false);
+  const [buscandoEndereco, setBuscandoEndereco] = useState(false);
+  const [sugestoes, setSugestoes] = useState<Endereco[]>([]);
 
   useEffect(() => {
     if (!open) return;
@@ -107,6 +109,46 @@ export function HealthDialog({ open, onOpenChange, event }: Props) {
     } finally {
       setBuscando(false);
     }
+  }
+
+  async function buscarPorEndereco() {
+    setBuscandoEndereco(true);
+    setSugestoes([]);
+    try {
+      const lista = await buscarCepPorEndereco(form.state, form.city, form.street);
+      if (lista.length === 1) {
+        const e = lista[0]!;
+        setForm((f) => ({
+          ...f,
+          cep: e.cep,
+          street: e.street || f.street,
+          district: e.district || f.district,
+          city: e.city || f.city,
+          state: e.state || f.state,
+        }));
+        toast.success(`CEP encontrado: ${e.cep}`);
+      } else {
+        setSugestoes(lista);
+        toast.success(`${lista.length} endereços encontrados, escolha abaixo`);
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao buscar CEP pelo endereço");
+    } finally {
+      setBuscandoEndereco(false);
+    }
+  }
+
+  function escolherSugestao(e: Endereco) {
+    setForm((f) => ({
+      ...f,
+      cep: e.cep,
+      street: e.street || f.street,
+      district: e.district || f.district,
+      city: e.city || f.city,
+      state: e.state || f.state,
+    }));
+    setSugestoes([]);
+    toast.success(`CEP ${e.cep} aplicado`);
   }
 
   async function onSalvar() {
