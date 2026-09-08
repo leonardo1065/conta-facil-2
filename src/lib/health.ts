@@ -77,6 +77,31 @@ export async function buscarCep(cepBruto: string): Promise<Endereco> {
   };
 }
 
+export async function buscarCepPorEndereco(
+  uf: string,
+  cidade: string,
+  logradouro: string,
+): Promise<Endereco[]> {
+  const estado = uf.trim().toUpperCase();
+  const city = cidade.trim();
+  const rua = logradouro.trim();
+  if (estado.length !== 2) throw new Error("Informe a UF (2 letras)");
+  if (city.length < 3) throw new Error("Informe a cidade");
+  if (rua.length < 3) throw new Error("Informe o logradouro (mínimo 3 letras)");
+  const url = `https://viacep.com.br/ws/${estado}/${encodeURIComponent(city)}/${encodeURIComponent(rua)}/json/`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Não foi possível consultar o endereço");
+  const data = (await res.json()) as unknown;
+  if (!Array.isArray(data) || data.length === 0) throw new Error("Nenhum CEP encontrado para esse endereço");
+  return (data as Record<string, string>[]).map((d) => ({
+    cep: (d.cep ?? "").replace(/\D/g, ""),
+    street: d.logradouro ?? "",
+    district: d.bairro ?? "",
+    city: d.localidade ?? "",
+    state: d.uf ?? "",
+  }));
+}
+
 export function useHealthEvents() {
   return useQuery({
     queryKey: ["health_events"],

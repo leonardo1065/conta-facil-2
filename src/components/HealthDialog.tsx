@@ -17,6 +17,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { todayISO } from "@/lib/dates";
 import {
   buscarCep,
+  buscarCepPorEndereco,
+  type Endereco,
   HEALTH_KIND_LABEL,
   PLACE_LABEL,
   useSaveHealthEvent,
@@ -55,6 +57,8 @@ export function HealthDialog({ open, onOpenChange, event }: Props) {
   const salvar = useSaveHealthEvent();
   const [form, setForm] = useState(vazio(todayISO()));
   const [buscando, setBuscando] = useState(false);
+  const [buscandoEndereco, setBuscandoEndereco] = useState(false);
+  const [sugestoes, setSugestoes] = useState<Endereco[]>([]);
 
   useEffect(() => {
     if (!open) return;
@@ -105,6 +109,46 @@ export function HealthDialog({ open, onOpenChange, event }: Props) {
     } finally {
       setBuscando(false);
     }
+  }
+
+  async function buscarPorEndereco() {
+    setBuscandoEndereco(true);
+    setSugestoes([]);
+    try {
+      const lista = await buscarCepPorEndereco(form.state, form.city, form.street);
+      if (lista.length === 1) {
+        const e = lista[0]!;
+        setForm((f) => ({
+          ...f,
+          cep: e.cep,
+          street: e.street || f.street,
+          district: e.district || f.district,
+          city: e.city || f.city,
+          state: e.state || f.state,
+        }));
+        toast.success(`CEP encontrado: ${e.cep}`);
+      } else {
+        setSugestoes(lista);
+        toast.success(`${lista.length} endereços encontrados, escolha abaixo`);
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao buscar CEP pelo endereço");
+    } finally {
+      setBuscandoEndereco(false);
+    }
+  }
+
+  function escolherSugestao(e: Endereco) {
+    setForm((f) => ({
+      ...f,
+      cep: e.cep,
+      street: e.street || f.street,
+      district: e.district || f.district,
+      city: e.city || f.city,
+      state: e.state || f.state,
+    }));
+    setSugestoes([]);
+    toast.success(`CEP ${e.cep} aplicado`);
   }
 
   async function onSalvar() {
@@ -262,11 +306,40 @@ export function HealthDialog({ open, onOpenChange, event }: Props) {
 
           <div className="space-y-1.5 sm:col-span-2">
             <Label htmlFor="street">Logradouro</Label>
-            <Input
-              id="street"
-              value={form.street}
-              onChange={(e) => set("street", e.target.value)}
-            />
+            <div className="flex gap-2">
+              <Input
+                id="street"
+                placeholder="Av. Paulista"
+                value={form.street}
+                onChange={(e) => set("street", e.target.value)}
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={buscandoEndereco}
+                onClick={buscarPorEndereco}
+              >
+                <Search className="mr-2 size-4" />
+                {buscandoEndereco ? "Buscando..." : "Buscar CEP"}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Preencha cidade e UF abaixo e clique em “Buscar CEP” para achar o CEP pelo endereço.
+            </p>
+            {sugestoes.length > 0 && (
+              <div className="mt-1 max-h-44 space-y-1 overflow-y-auto rounded-lg border border-border/70 p-2">
+                {sugestoes.map((s, i) => (
+                  <button
+                    key={`${s.cep}-${i}`}
+                    type="button"
+                    className="w-full rounded-md p-2 text-left text-sm hover:bg-muted"
+                    onClick={() => escolherSugestao(s)}
+                  >
+                    <span className="font-medium">{s.cep}</span> — {s.street}, {s.district} · {s.city}/{s.state}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="space-y-1.5">
