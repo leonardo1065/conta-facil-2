@@ -10,6 +10,7 @@ import {
   HeartPulse,
   Mail,
   MessageCircle,
+  RefreshCw,
   Send,
   Zap,
 } from "lucide-react";
@@ -73,6 +74,7 @@ export function SettingsDialog({
     enabled: open,
     staleTime: 30_000,
   });
+  const [ajudaGmail, setAjudaGmail] = useState(false);
 
 
 
@@ -461,6 +463,7 @@ export function SettingsDialog({
                 onClick={async () => {
                   const { data } = await revalidarGmail();
                   if (data?.conectado) {
+                    setAjudaGmail(false);
                     toast.success(data.detalhe);
                   } else {
                     toast.info("Autorização do Google ainda não concluída", {
@@ -479,12 +482,57 @@ export function SettingsDialog({
                     : "Verificar conexão do Gmail"}
               </Button>
 
+              {!verificandoGmail && gmail && !gmail.conectado && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  className="gap-2"
+                  onClick={async () => {
+                    const { data } = await revalidarGmail();
+                    if (data?.conectado) {
+                      setAjudaGmail(false);
+                      toast.success(data.detalhe);
+                    } else {
+                      setAjudaGmail(true);
+                      toast.info("Gmail ainda não conectado", {
+                        description:
+                          "Siga os passos exibidos abaixo para autorizar e depois verifique novamente.",
+                      });
+                    }
+                  }}
+                >
+                  <RefreshCw className="size-4" />
+                  Reconectar Gmail
+                </Button>
+              )}
+
               {gmail?.conectado && (
                 <span className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
                   <CheckCircle2 className="size-3.5" /> Conectado
                 </span>
               )}
             </div>
+
+            {ajudaGmail && !gmail?.conectado && (
+              <div className="space-y-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs">
+                <p className="font-medium">Como concluir a autorização do Google:</p>
+                <ol className="list-decimal space-y-1 pl-4 text-muted-foreground">
+                  <li>
+                    Na conversa do assistente, peça <span className="font-medium text-foreground">“conectar Gmail”</span>.
+                  </li>
+                  <li>
+                    Um cartão <span className="font-medium text-foreground">“Conectar Gmail”</span> aparece na conversa — clique nele.
+                  </li>
+                  <li>Entre com a sua conta Google e toque em Permitir.</li>
+                  <li>Volte aqui e toque em “Verificar conexão do Gmail”.</li>
+                </ol>
+                <p className="text-muted-foreground">
+                  Se o cartão não aparecer, abra as configurações de conectores do assistente e, em
+                  “Gerenciar permissões do meu agente”, deixe o Google como “Perguntar sempre”.
+                </p>
+              </div>
+            )}
           </div>
 
 
