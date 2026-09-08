@@ -10,6 +10,7 @@ import {
   HeartPulse,
   Mail,
   MessageCircle,
+  RefreshCw,
   Send,
   Zap,
 } from "lucide-react";
@@ -73,6 +74,7 @@ export function SettingsDialog({
     enabled: open,
     staleTime: 30_000,
   });
+  const [ajudaGmail, setAjudaGmail] = useState(false);
 
 
 
