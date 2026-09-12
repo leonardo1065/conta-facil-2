@@ -40,6 +40,8 @@ function Categorias() {
   const [nome, setNome] = useState("");
   const [kind, setKind] = useState<EntryKind>("despesa");
   const [cor, setCor] = useState(CORES[0]);
+  const [recorrencia, setRecorrencia] = useState<"nenhuma" | "mensal" | "semanal" | "parcelada">("nenhuma");
+  const [parcelas, setParcelas] = useState(6);
 
   const despesas = (categories ?? []).filter((c) => c.kind === "despesa");
   const receitas = (categories ?? []).filter((c) => c.kind === "receita");
@@ -48,11 +50,23 @@ function Categorias() {
     e.preventDefault();
     if (!nome.trim()) return;
     salvar.mutate(
-      { values: { name: nome.trim(), kind, color: cor, icon: "tag" } },
+      {
+        values: {
+          name: nome.trim(),
+          kind,
+          color: cor,
+          icon: "tag",
+          recurrence_mode: recorrencia,
+          recurrence_interval: 1,
+          recurrence_count: recorrencia === "parcelada" ? Math.max(1, Math.min(parcelas, 120)) : null,
+        },
+      },
       {
         onSuccess: () => {
           toast.success("Categoria criada.");
           setNome("");
+          setRecorrencia("nenhuma");
+          setParcelas(6);
           setAberto(false);
         },
         onError: () => toast.error("Não foi possível criar a categoria."),
