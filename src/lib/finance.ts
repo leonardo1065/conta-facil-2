@@ -328,6 +328,16 @@ export function useTogglePaid() {
 }
 
 
+export type CategoryInput = {
+  name: string;
+  kind: EntryKind;
+  color: string;
+  icon: string;
+  recurrence_mode?: Category["recurrence_mode"];
+  recurrence_interval?: number;
+  recurrence_count?: number | null;
+};
+
 export function useSaveCategory() {
   const qc = useQueryClient();
   return useMutation({
@@ -336,7 +346,7 @@ export function useSaveCategory() {
       values,
     }: {
       id?: string;
-      values: { name: string; kind: EntryKind; color: string; icon: string };
+      values: CategoryInput;
     }) => {
       if (id) {
         const { error } = await supabase.from("categories").update(values).eq("id", id);
