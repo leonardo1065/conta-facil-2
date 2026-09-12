@@ -109,6 +109,36 @@ function Categorias() {
               </Select>
             </div>
             <div className="space-y-2">
+              <Label>Repetição padrão</Label>
+              <Select
+                value={recorrencia}
+                onValueChange={(v) => setRecorrencia(v as typeof recorrencia)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="nenhuma">Sem repetição</SelectItem>
+                  <SelectItem value="mensal">Conta recorrente (todo mês)</SelectItem>
+                  <SelectItem value="semanal">Semanal (toda semana)</SelectItem>
+                  <SelectItem value="parcelada">Prestação (nº de parcelas)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {recorrencia === "parcelada" && (
+              <div className="space-y-2">
+                <Label htmlFor="parcelas-cat">Quantas prestações?</Label>
+                <Input
+                  id="parcelas-cat"
+                  type="number"
+                  min={1}
+                  max={120}
+                  value={parcelas}
+                  onChange={(e) => setParcelas(Number(e.target.value))}
+                />
+              </div>
+            )}
+            <div className="space-y-2">
               <Label>Cor</Label>
               <div className="flex flex-wrap gap-2">
                 {CORES.map((c) => (

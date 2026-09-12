@@ -223,7 +223,19 @@ export function EntryDialog({ open, onOpenChange, entry, defaultDate }: Props) {
               <Label>Categoria</Label>
               <Select
                 value={form.category_id}
-                onValueChange={(v) => setForm({ ...form, category_id: v })}
+                onValueChange={(v) => {
+                  setForm({ ...form, category_id: v });
+                  if (entry) return;
+                  const cat = categoriasFiltradas.find((c) => c.id === v);
+                  if (!cat || !cat.recurrence_mode || cat.recurrence_mode === "nenhuma") return;
+                  setRecorrencia((r) =>
+                    cat.recurrence_mode === "parcelada"
+                      ? { ...r, mode: "parcelada", count: cat.recurrence_count ?? 6, frequency: "mensal" }
+                      : cat.recurrence_mode === "semanal"
+                        ? { ...r, mode: "recorrente", unit: "semana", intervalMonths: cat.recurrence_interval || 1 }
+                        : { ...r, mode: "recorrente", unit: "mes", intervalMonths: cat.recurrence_interval || 1 },
+                  );
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione" />
