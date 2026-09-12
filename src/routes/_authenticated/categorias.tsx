@@ -40,6 +40,8 @@ function Categorias() {
   const [nome, setNome] = useState("");
   const [kind, setKind] = useState<EntryKind>("despesa");
   const [cor, setCor] = useState(CORES[0]);
+  const [recorrencia, setRecorrencia] = useState<"nenhuma" | "mensal" | "semanal" | "parcelada">("nenhuma");
+  const [parcelas, setParcelas] = useState(6);
 
   const despesas = (categories ?? []).filter((c) => c.kind === "despesa");
   const receitas = (categories ?? []).filter((c) => c.kind === "receita");
@@ -48,11 +50,23 @@ function Categorias() {
     e.preventDefault();
     if (!nome.trim()) return;
     salvar.mutate(
-      { values: { name: nome.trim(), kind, color: cor, icon: "tag" } },
+      {
+        values: {
+          name: nome.trim(),
+          kind,
+          color: cor,
+          icon: "tag",
+          recurrence_mode: recorrencia,
+          recurrence_interval: 1,
+          recurrence_count: recorrencia === "parcelada" ? Math.max(1, Math.min(parcelas, 120)) : null,
+        },
+      },
       {
         onSuccess: () => {
           toast.success("Categoria criada.");
           setNome("");
+          setRecorrencia("nenhuma");
+          setParcelas(6);
           setAberto(false);
         },
         onError: () => toast.error("Não foi possível criar a categoria."),
@@ -95,6 +109,36 @@ function Categorias() {
               </Select>
             </div>
             <div className="space-y-2">
+              <Label>Repetição padrão</Label>
+              <Select
+                value={recorrencia}
+                onValueChange={(v) => setRecorrencia(v as typeof recorrencia)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="nenhuma">Sem repetição</SelectItem>
+                  <SelectItem value="mensal">Conta recorrente (todo mês)</SelectItem>
+                  <SelectItem value="semanal">Semanal (toda semana)</SelectItem>
+                  <SelectItem value="parcelada">Prestação (nº de parcelas)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {recorrencia === "parcelada" && (
+              <div className="space-y-2">
+                <Label htmlFor="parcelas-cat">Quantas prestações?</Label>
+                <Input
+                  id="parcelas-cat"
+                  type="number"
+                  min={1}
+                  max={120}
+                  value={parcelas}
+                  onChange={(e) => setParcelas(Number(e.target.value))}
+                />
+              </div>
+            )}
+            <div className="space-y-2">
               <Label>Cor</Label>
               <div className="flex flex-wrap gap-2">
                 {CORES.map((c) => (
@@ -125,7 +169,13 @@ function Grupo({
   onDelete,
 }: {
   titulo: string;
-  itens: { id: string; name: string; color: string }[];
+  itens: {
+    id: string;
+    name: string;
+    color: string;
+    recurrence_mode?: "nenhuma" | "mensal" | "semanal" | "parcelada";
+    recurrence_count?: number | null;
+  }[];
   onDelete: (id: string) => void;
 }) {
   return (
@@ -138,7 +188,18 @@ function Grupo({
           {itens.map((c) => (
             <li key={c.id} className="card-elevated flex items-center gap-3 px-4 py-3">
               <span className="size-4 rounded-full" style={{ backgroundColor: c.color }} />
-              <span className="flex-1 truncate">{c.name}</span>
+              <span className="flex-1 truncate">
+                {c.name}
+                {c.recurrence_mode && c.recurrence_mode !== "nenhuma" && (
+                  <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                    {c.recurrence_mode === "mensal"
+                      ? "todo mês"
+                      : c.recurrence_mode === "semanal"
+                        ? "semanal"
+                        : `${c.recurrence_count ?? ""}x`}
+                  </span>
+                )}
+              </span>
               <Button variant="ghost" size="icon" aria-label="Excluir" onClick={() => onDelete(c.id)}>
                 <Trash2 className="size-4 text-destructive" />
               </Button>

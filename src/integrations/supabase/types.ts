@@ -22,6 +22,9 @@ export type Database = {
           id: string
           kind: Database["public"]["Enums"]["entry_kind"]
           name: string
+          recurrence_count: number | null
+          recurrence_interval: number
+          recurrence_mode: string
           user_id: string
         }
         Insert: {
@@ -31,6 +34,9 @@ export type Database = {
           id?: string
           kind?: Database["public"]["Enums"]["entry_kind"]
           name: string
+          recurrence_count?: number | null
+          recurrence_interval?: number
+          recurrence_mode?: string
           user_id: string
         }
         Update: {
@@ -40,6 +46,9 @@ export type Database = {
           id?: string
           kind?: Database["public"]["Enums"]["entry_kind"]
           name?: string
+          recurrence_count?: number | null
+          recurrence_interval?: number
+          recurrence_mode?: string
           user_id?: string
         }
         Relationships: []
