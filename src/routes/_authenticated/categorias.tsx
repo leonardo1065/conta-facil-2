@@ -169,7 +169,13 @@ function Grupo({
   onDelete,
 }: {
   titulo: string;
-  itens: { id: string; name: string; color: string }[];
+  itens: {
+    id: string;
+    name: string;
+    color: string;
+    recurrence_mode?: "nenhuma" | "mensal" | "semanal" | "parcelada";
+    recurrence_count?: number | null;
+  }[];
   onDelete: (id: string) => void;
 }) {
   return (
@@ -182,7 +188,18 @@ function Grupo({
           {itens.map((c) => (
             <li key={c.id} className="card-elevated flex items-center gap-3 px-4 py-3">
               <span className="size-4 rounded-full" style={{ backgroundColor: c.color }} />
-              <span className="flex-1 truncate">{c.name}</span>
+              <span className="flex-1 truncate">
+                {c.name}
+                {c.recurrence_mode && c.recurrence_mode !== "nenhuma" && (
+                  <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                    {c.recurrence_mode === "mensal"
+                      ? "todo mês"
+                      : c.recurrence_mode === "semanal"
+                        ? "semanal"
+                        : `${c.recurrence_count ?? ""}x`}
+                  </span>
+                )}
+              </span>
               <Button variant="ghost" size="icon" aria-label="Excluir" onClick={() => onDelete(c.id)}>
                 <Trash2 className="size-4 text-destructive" />
               </Button>
