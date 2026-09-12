@@ -12,6 +12,9 @@ export type Category = {
   kind: EntryKind;
   color: string;
   icon: string;
+  recurrence_mode: "nenhuma" | "mensal" | "semanal" | "parcelada";
+  recurrence_interval: number;
+  recurrence_count: number | null;
 };
 
 export type Entry = {
