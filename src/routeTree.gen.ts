@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedSaudeRouteImport } from './routes/_authenticated/saude'
+import { Route as AuthenticatedRecorrenteRouteImport } from './routes/_authenticated/recorrente'
 import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated/painel'
 import { Route as AuthenticatedModeloEmailRouteImport } from './routes/_authenticated/modelo-email'
 import { Route as AuthenticatedLancamentosRouteImport } from './routes/_authenticated/lancamentos'
@@ -45,6 +46,11 @@ const IndexRoute = IndexRouteImport.update({
 const AuthenticatedSaudeRoute = AuthenticatedSaudeRouteImport.update({
   id: '/saude',
   path: '/saude',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedRecorrenteRoute = AuthenticatedRecorrenteRouteImport.update({
+  id: '/recorrente',
+  path: '/recorrente',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedPainelRoute = AuthenticatedPainelRouteImport.update({
@@ -101,6 +107,7 @@ export interface FileRoutesByFullPath {
   '/lancamentos': typeof AuthenticatedLancamentosRoute
   '/modelo-email': typeof AuthenticatedModeloEmailRoute
   '/painel': typeof AuthenticatedPainelRoute
+  '/recorrente': typeof AuthenticatedRecorrenteRoute
   '/saude': typeof AuthenticatedSaudeRoute
   '/api/public/hooks/avisos': typeof ApiPublicHooksAvisosRoute
 }
@@ -115,6 +122,7 @@ export interface FileRoutesByTo {
   '/lancamentos': typeof AuthenticatedLancamentosRoute
   '/modelo-email': typeof AuthenticatedModeloEmailRoute
   '/painel': typeof AuthenticatedPainelRoute
+  '/recorrente': typeof AuthenticatedRecorrenteRoute
   '/saude': typeof AuthenticatedSaudeRoute
   '/api/public/hooks/avisos': typeof ApiPublicHooksAvisosRoute
 }
@@ -131,6 +139,7 @@ export interface FileRoutesById {
   '/_authenticated/lancamentos': typeof AuthenticatedLancamentosRoute
   '/_authenticated/modelo-email': typeof AuthenticatedModeloEmailRoute
   '/_authenticated/painel': typeof AuthenticatedPainelRoute
+  '/_authenticated/recorrente': typeof AuthenticatedRecorrenteRoute
   '/_authenticated/saude': typeof AuthenticatedSaudeRoute
   '/api/public/hooks/avisos': typeof ApiPublicHooksAvisosRoute
 }
@@ -147,6 +156,7 @@ export interface FileRouteTypes {
     | '/lancamentos'
     | '/modelo-email'
     | '/painel'
+    | '/recorrente'
     | '/saude'
     | '/api/public/hooks/avisos'
   fileRoutesByTo: FileRoutesByTo
@@ -161,6 +171,7 @@ export interface FileRouteTypes {
     | '/lancamentos'
     | '/modelo-email'
     | '/painel'
+    | '/recorrente'
     | '/saude'
     | '/api/public/hooks/avisos'
   id:
@@ -176,6 +187,7 @@ export interface FileRouteTypes {
     | '/_authenticated/lancamentos'
     | '/_authenticated/modelo-email'
     | '/_authenticated/painel'
+    | '/_authenticated/recorrente'
     | '/_authenticated/saude'
     | '/api/public/hooks/avisos'
   fileRoutesById: FileRoutesById
@@ -223,6 +235,13 @@ declare module '@tanstack/react-router' {
       path: '/saude'
       fullPath: '/saude'
       preLoaderRoute: typeof AuthenticatedSaudeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/recorrente': {
+      id: '/_authenticated/recorrente'
+      path: '/recorrente'
+      fullPath: '/recorrente'
+      preLoaderRoute: typeof AuthenticatedRecorrenteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/painel': {
@@ -292,6 +311,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLancamentosRoute: typeof AuthenticatedLancamentosRoute
   AuthenticatedModeloEmailRoute: typeof AuthenticatedModeloEmailRoute
   AuthenticatedPainelRoute: typeof AuthenticatedPainelRoute
+  AuthenticatedRecorrenteRoute: typeof AuthenticatedRecorrenteRoute
   AuthenticatedSaudeRoute: typeof AuthenticatedSaudeRoute
 }
 
@@ -303,6 +323,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLancamentosRoute: AuthenticatedLancamentosRoute,
   AuthenticatedModeloEmailRoute: AuthenticatedModeloEmailRoute,
   AuthenticatedPainelRoute: AuthenticatedPainelRoute,
+  AuthenticatedRecorrenteRoute: AuthenticatedRecorrenteRoute,
   AuthenticatedSaudeRoute: AuthenticatedSaudeRoute,
 }
 
