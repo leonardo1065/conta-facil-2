@@ -33,7 +33,7 @@ export type Entry = {
   series_id: string | null;
   is_recurring: boolean;
   recurrence_interval_months: number;
-  recurrence_unit: "mes" | "semana";
+  recurrence_unit: "mes" | "semana" | "dia";
   installment_no: number | null;
   installment_total: number | null;
   is_avulsa: boolean;
@@ -52,7 +52,7 @@ export type Recurrence = {
   interval: number;
   count: number;
   intervalMonths: number;
-  unit: "mes" | "semana";
+  unit: "mes" | "semana" | "dia";
 };
 
 
@@ -292,7 +292,9 @@ export function useTogglePaid() {
         nextDueDate ||
         (entry.recurrence_unit === "semana"
           ? addDays(entry.due_date, passo * 7)
-          : addMonths(entry.due_date, passo));
+          : entry.recurrence_unit === "dia"
+            ? addDays(entry.due_date, passo)
+            : addMonths(entry.due_date, passo));
 
 
       const { data: existente } = await supabase
