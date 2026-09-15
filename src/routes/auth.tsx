@@ -45,7 +45,12 @@ function AuthPage() {
     setCarregando(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
     setCarregando(false);
-    if (error) return toast.error("E-mail ou senha inválidos.");
+    if (error) {
+      if (/email not confirmed/i.test(error.message)) {
+        return toast.error("Este cadastro ainda aguarda confirmação. Crie a conta novamente para liberar o acesso.");
+      }
+      return toast.error("E-mail ou senha inválidos.");
+    }
     navigate({ to: "/painel", replace: true });
   }
 
@@ -68,7 +73,7 @@ function AuthPage() {
       return toast.error(`Não foi possível criar a conta: ${error.message}`);
     }
     if (!data.session) {
-      toast.success("Conta criada! Abra seu e-mail e confirme o cadastro para entrar.");
+      toast.success("Conta criada. Agora você já pode entrar com seu e-mail e senha.");
       return;
     }
     toast.success("Conta criada com sucesso!");
