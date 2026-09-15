@@ -1,2 +1,3 @@
 
-- [ ] Corrigir botão Conectar Gmail para autorização real, sem pedir ação no chat
+- [ ] Integrar o Resend aos avisos usando doutorleo@doutorleo.com como remetente
+- [ ] Exibir o cartão Conectar Gmail para autorização da conta
