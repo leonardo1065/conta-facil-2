@@ -1009,23 +1009,21 @@ export async function enviarResumo(
     };
   }
 
-  // 1. Usa o Resend quando a chave estiver configurada.
-  const usarResend = Boolean(process.env.RESEND_API_KEY);
-  // 2. Tenta SMTP (Gmail com senha de app) se configurado (global ou no perfil)
+  // 1. Usa o Gmail conectado, que não depende da verificação de doutorleo.com.
+  const usarGmailAPI = Boolean(process.env.GOOGLE_MAIL_API_KEY && process.env.LOVABLE_API_KEY);
+  // 2. Tenta SMTP (Gmail com senha de app) se configurado (global ou no perfil).
   const usarSMTP = Boolean(
-    !usarResend &&
+    !usarGmailAPI &&
     (perfil.smtp_config?.host && perfil.smtp_config?.user && perfil.smtp_config?.pass) ||
-    (!usarResend && process.env.SMTP_HOST && process.env.SMTP_USER)
+    (!usarGmailAPI && process.env.SMTP_HOST && process.env.SMTP_USER)
   );
-  // 3. Tenta Google Mail API (Conector)
-  const usarGmailAPI = !usarResend && !usarSMTP && Boolean(process.env.GOOGLE_MAIL_API_KEY && process.env.LOVABLE_API_KEY);
+  // 3. Mantém o Resend como alternativa somente quando o Gmail não estiver disponível.
+  const usarResend = !usarGmailAPI && !usarSMTP && Boolean(process.env.RESEND_API_KEY);
 
   const email = await comRepeticao("email", async () => {
-    if (usarResend) {
-      return enviarEmailResend(perfil, resumo, `${perfil.id}:${opcoes.tipo}:${hoje}`);
-    }
-    if (usarSMTP) return enviarEmailSMTP(perfil, resumo);
     if (usarGmailAPI) return enviarEmailGmail(perfil, resumo);
+    if (usarSMTP) return enviarEmailSMTP(perfil, resumo);
+    if (usarResend) return enviarEmailResend(perfil, resumo, `${perfil.id}:${opcoes.tipo}:${hoje}`);
     try {
       const apiKey = process.env.LOVABLE_API_KEY;
       if (!apiKey) {
