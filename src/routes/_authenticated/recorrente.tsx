@@ -55,6 +55,8 @@ function Recorrente() {
   const [parcelas, setParcelas] = useState(6);
   const [filtroCategoria, setFiltroCategoria] = useState<string>("todas");
   const [filtroStatus, setFiltroStatus] = useState<string>("todos");
+  const [busca, setBusca] = useState("");
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     if (!emEdicao) return;
@@ -69,18 +71,32 @@ function Recorrente() {
     });
   }, [emEdicao]);
 
-  const lista = useMemo(
-    () => (entries ?? []).filter((e) => e.is_recurring || (e.installment_total ?? 0) > 1),
-    [entries],
-  );
+  function editar(entry: Entry) {
+    setEmEdicao(entry);
+    // Garante que o formulário fique visível (principalmente no celular)
+    requestAnimationFrame(() =>
+      formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+    );
+  }
+
+  const lista = useMemo(() => {
+    const refAtual = currentMonthRef();
+    return (entries ?? []).filter(
+      (e) =>
+        (e.is_recurring || (e.installment_total ?? 0) > 1) &&
+        monthRef(e.due_date) === refAtual,
+    );
+  }, [entries]);
 
   const listaFiltrada = useMemo(() => {
+    const termo = busca.trim().toLowerCase();
     return lista.filter((e) => {
       const porCategoria = filtroCategoria === "todas" || e.category_id === filtroCategoria;
       const porStatus = filtroStatus === "todos" || e.status === filtroStatus;
-      return porCategoria && porStatus;
+      const porBusca = termo === "" || e.description.toLowerCase().includes(termo);
+      return porCategoria && porStatus && porBusca;
     });
-  }, [lista, filtroCategoria, filtroStatus]);
+  }, [lista, filtroCategoria, filtroStatus, busca]);
 
   const categoriasFiltradas = (categories ?? []).filter((c) => c.kind === form.kind);
 
