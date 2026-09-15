@@ -331,6 +331,9 @@ export function SettingsDialog({
               value={form.notify_email}
               onChange={(e) => setForm((f) => ({ ...f, notify_email: e.target.value }))}
             />
+            <p className="text-xs text-muted-foreground">
+              Os avisos são enviados por Agenda de Contas &lt;doutorleo@doutorleo.com&gt;.
+            </p>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
