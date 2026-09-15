@@ -53,6 +53,8 @@ function Recorrente() {
   const [form, setForm] = useState(emptyForm());
   const [repeticao, setRepeticao] = useState<Repeticao>("mensal");
   const [parcelas, setParcelas] = useState(6);
+  const [filtroCategoria, setFiltroCategoria] = useState<string>("todas");
+  const [filtroStatus, setFiltroStatus] = useState<string>("todos");
 
   useEffect(() => {
     if (!emEdicao) return;
@@ -71,6 +73,14 @@ function Recorrente() {
     () => (entries ?? []).filter((e) => e.is_recurring || (e.installment_total ?? 0) > 1),
     [entries],
   );
+
+  const listaFiltrada = useMemo(() => {
+    return lista.filter((e) => {
+      const porCategoria = filtroCategoria === "todas" || e.category_id === filtroCategoria;
+      const porStatus = filtroStatus === "todos" || e.status === filtroStatus;
+      return porCategoria && porStatus;
+    });
+  }, [lista, filtroCategoria, filtroStatus]);
 
   const categoriasFiltradas = (categories ?? []).filter((c) => c.kind === form.kind);
 
@@ -282,15 +292,42 @@ function Recorrente() {
         </form>
 
         {/* Lista */}
-        <div className="space-y-2">
+        <div className="space-y-3">
           <h2 className="font-semibold">Contas cadastradas</h2>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">Categoria</Label>
+              <Select value={filtroCategoria} onValueChange={setFiltroCategoria}>
+                <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas</SelectItem>
+                  {(categories ?? []).map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">Situação</Label>
+              <Select value={filtroStatus} onValueChange={setFiltroStatus}>
+                <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todas</SelectItem>
+                  <SelectItem value="pendente">Pendente</SelectItem>
+                  <SelectItem value="pago">Pago / Recebido</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           {isLoading ? (
             <p className="text-sm text-muted-foreground">Carregando...</p>
           ) : (
             <EntryList
-              entries={lista}
+              entries={listaFiltrada}
               onEdit={setEmEdicao}
-              empty="Nenhuma conta recorrente cadastrada ainda."
+              empty="Nenhuma conta recorrente encontrada com os filtros selecionados."
             />
           )}
         </div>
