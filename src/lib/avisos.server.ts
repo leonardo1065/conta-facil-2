@@ -887,8 +887,7 @@ export async function enviarResumo(
     };
   }
 
-  // O Gmail conectado é o único remetente. Isso impede qualquer tentativa
-  // pelo antigo domínio doutorleo.com ou por outro serviço de e-mail.
+  // O Gmail conectado é o único remetente; não há fallback para outro serviço.
   const email = await comRepeticao("email", () => enviarEmailGmail(perfil, resumo));
 
   await registrar("email", email);
