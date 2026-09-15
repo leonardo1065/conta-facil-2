@@ -53,6 +53,8 @@ function Recorrente() {
   const [form, setForm] = useState(emptyForm());
   const [repeticao, setRepeticao] = useState<Repeticao>("mensal");
   const [parcelas, setParcelas] = useState(6);
+  const [filtroCategoria, setFiltroCategoria] = useState<string>("todas");
+  const [filtroStatus, setFiltroStatus] = useState<string>("todos");
 
   useEffect(() => {
     if (!emEdicao) return;
@@ -71,6 +73,14 @@ function Recorrente() {
     () => (entries ?? []).filter((e) => e.is_recurring || (e.installment_total ?? 0) > 1),
     [entries],
   );
+
+  const listaFiltrada = useMemo(() => {
+    return lista.filter((e) => {
+      const porCategoria = filtroCategoria === "todas" || e.category_id === filtroCategoria;
+      const porStatus = filtroStatus === "todos" || e.status === filtroStatus;
+      return porCategoria && porStatus;
+    });
+  }, [lista, filtroCategoria, filtroStatus]);
 
   const categoriasFiltradas = (categories ?? []).filter((c) => c.kind === form.kind);
 
