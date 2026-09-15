@@ -353,8 +353,8 @@ function Recorrente() {
           ) : (
             <EntryList
               entries={listaFiltrada}
-              onEdit={setEmEdicao}
-              empty="Nenhuma conta recorrente encontrada com os filtros selecionados."
+              onEdit={editar}
+              empty="Nenhuma conta recorrente encontrada neste mês com os filtros selecionados."
             />
           )}
         </div>
