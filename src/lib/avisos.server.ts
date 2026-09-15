@@ -1,7 +1,5 @@
 // Montagem e envio dos avisos automáticos (contas a vencer + saúde).
 // Server-only: usa service role para varrer todos os usuários no cron.
-import { sendLovableEmail, EmailAPIError } from "@lovable.dev/email-js";
-import nodemailer from "nodemailer";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { addDays, diffDays, formatBRL, formatDate, todayISO } from "./dates";
 import { normalizarWhatsapp } from "./phone";
@@ -385,19 +383,6 @@ export async function montarResumoSaude(
   return { assunto, texto, html, vazio };
 }
 
-
-function remetente(): string {
-  // 1. Prioriza o remetente fixo configurado nos segredos
-  const email = process.env.AVISOS_FROM_EMAIL;
-  if (email && email.trim()) return `Agenda de Contas <${email.trim()}>`;
-  
-  // 2. Tenta construir a partir do domínio configurado
-  const domain = process.env.AVISOS_SENDER_DOMAIN;
-  if (domain && domain.trim()) return `Agenda de Contas <avisos@${domain.trim()}>`;
-
-  // 3. Fallback absoluto para a infraestrutura do Lovable
-  return "Agenda de Contas <avisos@lovable.app>";
-}
 
 /** Número em E.164 (assume Brasil quando vier sem código do país). */
 export function telefoneE164(numero: string): string {
@@ -830,113 +815,6 @@ export async function enviarEmailGmail(
   }
 }
 
-/** Envia o resumo usando SMTP (Gmail ou outro) caso configurado nos segredos. */
-export async function enviarEmailSMTP(
-  perfil: AvisoPerfil,
-  resumo: AvisoResumo,
-): Promise<ResultadoCanal> {
-  const host = perfil.smtp_config?.host || process.env.SMTP_HOST;
-  const port = Number(perfil.smtp_config?.port || process.env.SMTP_PORT || 587);
-  const user = perfil.smtp_config?.user || process.env.SMTP_USER;
-  const pass = perfil.smtp_config?.pass || process.env.SMTP_PASS;
-
-  if (!host || !user || !pass) {
-    return {
-      enviado: false,
-      status: "sem_smtp",
-      detalhe: "SMTP não configurado (host, usuário ou senha ausentes). Configure em Configurações > E-mail.",
-      definitivo: true,
-    };
-  }
-
-  try {
-    const transporter = nodemailer.createTransport({
-      host,
-      port,
-      secure: port === 465,
-      auth: { user, pass },
-    });
-
-    await transporter.sendMail({
-      from: `Agenda de Contas <${user}>`,
-      to: perfil.notify_email!,
-      subject: resumo.assunto,
-      text: resumo.texto,
-      html: resumo.html,
-    });
-
-    return { enviado: true, status: "enviado", detalhe: resumo.assunto };
-  } catch (error) {
-    const detalhe = error instanceof Error ? error.message : "erro desconhecido no SMTP";
-    console.error("[avisos:smtp] Falha ao enviar:", detalhe);
-    return {
-      enviado: false,
-      status: "falha_smtp",
-      detalhe: detalhe.slice(0, 500),
-      definitivo: /auth|login|credential|535/i.test(detalhe),
-    };
-  }
-}
-
-/** Envia os avisos pelo Resend usando o remetente verificado do projeto. */
-export async function enviarEmailResend(
-  perfil: AvisoPerfil,
-  resumo: AvisoResumo,
-  idempotencyKey: string,
-): Promise<ResultadoCanal> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    return {
-      enviado: false,
-      status: "sem_resend",
-      detalhe: "Resend não configurado",
-      definitivo: true,
-    };
-  }
-
-  try {
-    const resposta = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "Idempotency-Key": idempotencyKey,
-      },
-      body: JSON.stringify({
-        from: "Agenda de Contas <doutorleo@doutorleo.com>",
-        to: [perfil.notify_email],
-        subject: resumo.assunto,
-        html: resumo.html,
-        text: resumo.texto,
-      }),
-    });
-
-    const corpo = await resposta.text();
-    if (!resposta.ok) {
-      console.error(`[avisos:resend] Falha [${resposta.status}]: ${corpo}`);
-      let detalhe = corpo.slice(0, 500);
-      try {
-        const json = JSON.parse(corpo) as { message?: string };
-        if (json.message) detalhe = json.message;
-      } catch {
-        // Mantém o texto retornado pelo Resend.
-      }
-      return {
-        enviado: false,
-        status: `falha_resend:${resposta.status}`,
-        detalhe,
-        definitivo: resposta.status === 401 || resposta.status === 403,
-      };
-    }
-
-    return { enviado: true, status: "enviado", detalhe: resumo.assunto };
-  } catch (error) {
-    const detalhe = error instanceof Error ? error.message : "erro desconhecido no Resend";
-    console.error("[avisos:resend] Falha ao enviar:", detalhe);
-    return { enviado: false, status: "falha_resend", detalhe: detalhe.slice(0, 500) };
-  }
-}
-
 export type ResultadoEnvio = {
   enviado: boolean;
   status: string;
@@ -1009,113 +887,9 @@ export async function enviarResumo(
     };
   }
 
-  // 1. Usa o Gmail conectado, que não depende da verificação de doutorleo.com.
-  const usarGmailAPI = Boolean(process.env.GOOGLE_MAIL_API_KEY && process.env.LOVABLE_API_KEY);
-  // 2. Tenta SMTP (Gmail com senha de app) se configurado (global ou no perfil).
-  const usarSMTP = Boolean(
-    !usarGmailAPI &&
-    (perfil.smtp_config?.host && perfil.smtp_config?.user && perfil.smtp_config?.pass) ||
-    (!usarGmailAPI && process.env.SMTP_HOST && process.env.SMTP_USER)
-  );
-  // 3. Mantém o Resend como alternativa somente quando o Gmail não estiver disponível.
-  const usarResend = !usarGmailAPI && !usarSMTP && Boolean(process.env.RESEND_API_KEY);
-
-  const email = await comRepeticao("email", async () => {
-    if (usarGmailAPI) return enviarEmailGmail(perfil, resumo);
-    if (usarSMTP) return enviarEmailSMTP(perfil, resumo);
-    if (usarResend) return enviarEmailResend(perfil, resumo, `${perfil.id}:${opcoes.tipo}:${hoje}`);
-    try {
-      const apiKey = process.env.LOVABLE_API_KEY;
-      if (!apiKey) {
-        console.error("[avisos:email] LOVABLE_API_KEY não encontrada no process.env");
-        return {
-          enviado: false,
-          status: "sem_config",
-          detalhe: "LOVABLE_API_KEY não configurada nos segredos do projeto",
-          definitivo: true,
-        };
-      }
-
-      // Lógica da API nativa: 
-      // Se o destinatário for o mesmo e-mail do dono da API (ou de um domínio verificado),
-      // o envio é permitido. Caso contrário, precisamos forçar o remetente padrão.
-      
-      const to = perfil.notify_email!.trim();
-      
-      // Buscamos o e-mail do usuário no Auth via Admin (para comparar com o destinatário)
-      let isSameUser = false;
-      try {
-        const { data: userData, error: authError } = await supabaseAdmin.auth.admin.getUserById(perfil.id);
-        if (authError) throw authError;
-        
-        const registeredEmail = userData?.user?.email;
-        console.log(`[avisos:email] Comparando: to=${to.toLowerCase()}, registered=${registeredEmail?.toLowerCase()}`);
-        
-        if (registeredEmail && registeredEmail.toLowerCase() === to.toLowerCase()) {
-          isSameUser = true;
-        }
-      } catch (e) {
-        console.warn("[avisos:email] Não foi possível verificar se o destinatário é o dono da conta", e);
-      }
-
-      // Se não for o mesmo e-mail, a API nativa exige domínio verificado.
-      // Caso não tenhamos domínio configurado, usamos o fallback nativo avisos@lovable.app
-      // que funciona para envios transacionais da plataforma.
-      // Tenta forçar o remetente padrão da plataforma para evitar necessidade de domínio
-      const from = "Agenda de Contas <avisos@lovable.app>";
-      const domain = "lovable.app";
-      
-      const data = {
-        to,
-        from,
-        subject: resumo.assunto,
-        html: resumo.html,
-        text: resumo.texto,
-        label: `aviso-${opcoes.tipo}`,
-        purpose: "transactional",
-        sender_domain: domain,
-      };
-      
-      const idempotencyKey = `${perfil.id}:${opcoes.tipo}:${hoje}:${Date.now()}`;
-      console.log(`[avisos:email] Enviando via Lovable Nativo: to=${data.to}, from=${data.from}, domain=${domain}`);
-      
-      const resposta = await sendLovableEmail(
-        { ...data, idempotency_key: idempotencyKey },
-        { apiKey }
-      );
-      
-      if (resposta.success) return { enviado: true, status: "enviado", detalhe: resumo.assunto };
-      
-      const statusText = resposta.status ? String(resposta.status) : "erro desconhecido";
-      console.error(`[avisos:email] Erro API Lovable: ${statusText}`);
-
-      if (statusText.includes("403") || statusText.includes("sender") || statusText.includes("matching_sender")) {
-        return {
-          enviado: false,
-          status: "falha_remetente",
-          detalhe: "Erro de autorização: o e-mail do remetente não corresponde a um domínio verificado. Para usar a API gratuita, o e-mail de aviso deve ser o mesmo do seu cadastro.",
-          definitivo: true
-        };
-      }
-
-      return { enviado: false, status: "falha", detalhe: statusText };
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : String(error);
-      console.error(`[avisos:email] Erro ao disparar e-mail:`, error);
-      
-      let detalhe = msg.slice(0, 500);
-      if (detalhe.includes("403") || detalhe.includes("matching_sender")) {
-        detalhe = "Erro de autorização: Para enviar para e-mails externos, você precisa de um domínio verificado. Use seu e-mail de cadastro para envio direto.";
-      }
-
-      return {
-        enviado: false,
-        status: error instanceof EmailAPIError ? `falha:${error.message}`.slice(0, 120) : "falha",
-        detalhe,
-        definitivo: /domain|dom[íi]nio|verif|from|sender|forbidden|401|403/i.test(detalhe),
-      };
-    }
-  });
+  // O Gmail conectado é o único remetente. Isso impede qualquer tentativa
+  // pelo antigo domínio doutorleo.com ou por outro serviço de e-mail.
+  const email = await comRepeticao("email", () => enviarEmailGmail(perfil, resumo));
 
   await registrar("email", email);
 
