@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Repeat } from "lucide-react";
+import { Repeat, Search } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { DateField } from "@/components/DateField";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EntryList } from "@/components/EntryList";
-import { todayISO } from "@/lib/dates";
+import { currentMonthRef, monthRef, todayISO } from "@/lib/dates";
 import {
   useCategories,
   useEntries,
@@ -55,6 +55,8 @@ function Recorrente() {
   const [parcelas, setParcelas] = useState(6);
   const [filtroCategoria, setFiltroCategoria] = useState<string>("todas");
   const [filtroStatus, setFiltroStatus] = useState<string>("todos");
+  const [busca, setBusca] = useState("");
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     if (!emEdicao) return;
@@ -69,18 +71,32 @@ function Recorrente() {
     });
   }, [emEdicao]);
 
-  const lista = useMemo(
-    () => (entries ?? []).filter((e) => e.is_recurring || (e.installment_total ?? 0) > 1),
-    [entries],
-  );
+  function editar(entry: Entry) {
+    setEmEdicao(entry);
+    // Garante que o formulário fique visível (principalmente no celular)
+    requestAnimationFrame(() =>
+      formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+    );
+  }
+
+  const lista = useMemo(() => {
+    const refAtual = currentMonthRef();
+    return (entries ?? []).filter(
+      (e) =>
+        (e.is_recurring || (e.installment_total ?? 0) > 1) &&
+        monthRef(e.due_date) === refAtual,
+    );
+  }, [entries]);
 
   const listaFiltrada = useMemo(() => {
+    const termo = busca.trim().toLowerCase();
     return lista.filter((e) => {
       const porCategoria = filtroCategoria === "todas" || e.category_id === filtroCategoria;
       const porStatus = filtroStatus === "todos" || e.status === filtroStatus;
-      return porCategoria && porStatus;
+      const porBusca = termo === "" || e.description.toLowerCase().includes(termo);
+      return porCategoria && porStatus && porBusca;
     });
-  }, [lista, filtroCategoria, filtroStatus]);
+  }, [lista, filtroCategoria, filtroStatus, busca]);
 
   const categoriasFiltradas = (categories ?? []).filter((c) => c.kind === form.kind);
 
@@ -144,7 +160,7 @@ function Recorrente() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Cadastro */}
-        <form onSubmit={submeter} className="card-elevated h-fit space-y-4 p-4 sm:p-5">
+        <form ref={formRef} onSubmit={submeter} className="card-elevated h-fit space-y-4 p-4 sm:p-5">
           <h2 className="font-semibold">{emEdicao ? "Alterar conta" : "Cadastrar conta"}</h2>
 
           <div className="grid grid-cols-2 gap-3">
@@ -293,7 +309,18 @@ function Recorrente() {
 
         {/* Lista */}
         <div className="space-y-3">
-          <h2 className="font-semibold">Contas cadastradas</h2>
+          <h2 className="font-semibold">Contas do mês atual</h2>
+
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              placeholder="Buscar conta pelo nome..."
+              className="pl-9"
+              aria-label="Buscar conta pelo nome"
+            />
+          </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
@@ -326,8 +353,8 @@ function Recorrente() {
           ) : (
             <EntryList
               entries={listaFiltrada}
-              onEdit={setEmEdicao}
-              empty="Nenhuma conta recorrente encontrada com os filtros selecionados."
+              onEdit={editar}
+              empty="Nenhuma conta recorrente encontrada neste mês com os filtros selecionados."
             />
           )}
         </div>
