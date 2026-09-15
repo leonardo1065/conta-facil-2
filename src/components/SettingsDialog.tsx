@@ -332,7 +332,7 @@ export function SettingsDialog({
               onChange={(e) => setForm((f) => ({ ...f, notify_email: e.target.value }))}
             />
             <p className="text-xs text-muted-foreground">
-              Os avisos são enviados por Agenda de Contas &lt;doutorleo@doutorleo.com&gt;.
+              Os avisos são enviados pela conta Gmail conectada para este endereço.
             </p>
           </div>
 
