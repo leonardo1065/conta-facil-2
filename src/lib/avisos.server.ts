@@ -878,6 +878,65 @@ export async function enviarEmailSMTP(
   }
 }
 
+/** Envia os avisos pelo Resend usando o remetente verificado do projeto. */
+export async function enviarEmailResend(
+  perfil: AvisoPerfil,
+  resumo: AvisoResumo,
+  idempotencyKey: string,
+): Promise<ResultadoCanal> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    return {
+      enviado: false,
+      status: "sem_resend",
+      detalhe: "Resend não configurado",
+      definitivo: true,
+    };
+  }
+
+  try {
+    const resposta = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "Idempotency-Key": idempotencyKey,
+      },
+      body: JSON.stringify({
+        from: "Agenda de Contas <doutorleo@doutorleo.com>",
+        to: [perfil.notify_email],
+        subject: resumo.assunto,
+        html: resumo.html,
+        text: resumo.texto,
+      }),
+    });
+
+    const corpo = await resposta.text();
+    if (!resposta.ok) {
+      console.error(`[avisos:resend] Falha [${resposta.status}]: ${corpo}`);
+      let detalhe = corpo.slice(0, 500);
+      try {
+        const json = JSON.parse(corpo) as { message?: string };
+        if (json.message) detalhe = json.message;
+      } catch {
+        // Mantém o texto retornado pelo Resend.
+      }
+      return {
+        enviado: false,
+        status: `falha_resend:${resposta.status}`,
+        detalhe,
+        definitivo: resposta.status === 401 || resposta.status === 403,
+      };
+    }
+
+    return { enviado: true, status: "enviado", detalhe: resumo.assunto };
+  } catch (error) {
+    const detalhe = error instanceof Error ? error.message : "erro desconhecido no Resend";
+    console.error("[avisos:resend] Falha ao enviar:", detalhe);
+    return { enviado: false, status: "falha_resend", detalhe: detalhe.slice(0, 500) };
+  }
+}
+
 export type ResultadoEnvio = {
   enviado: boolean;
   status: string;
@@ -950,15 +1009,21 @@ export async function enviarResumo(
     };
   }
 
-  // 1. Tenta SMTP (Gmail com senha de app) se configurado (global ou no perfil)
+  // 1. Usa o Resend quando a chave estiver configurada.
+  const usarResend = Boolean(process.env.RESEND_API_KEY);
+  // 2. Tenta SMTP (Gmail com senha de app) se configurado (global ou no perfil)
   const usarSMTP = Boolean(
+    !usarResend &&
     (perfil.smtp_config?.host && perfil.smtp_config?.user && perfil.smtp_config?.pass) ||
-    (process.env.SMTP_HOST && process.env.SMTP_USER)
+    (!usarResend && process.env.SMTP_HOST && process.env.SMTP_USER)
   );
-  // 2. Tenta Google Mail API (Conector)
-  const usarGmailAPI = !usarSMTP && Boolean(process.env.GOOGLE_MAIL_API_KEY && process.env.LOVABLE_API_KEY);
+  // 3. Tenta Google Mail API (Conector)
+  const usarGmailAPI = !usarResend && !usarSMTP && Boolean(process.env.GOOGLE_MAIL_API_KEY && process.env.LOVABLE_API_KEY);
 
   const email = await comRepeticao("email", async () => {
+    if (usarResend) {
+      return enviarEmailResend(perfil, resumo, `${perfil.id}:${opcoes.tipo}:${hoje}`);
+    }
     if (usarSMTP) return enviarEmailSMTP(perfil, resumo);
     if (usarGmailAPI) return enviarEmailGmail(perfil, resumo);
     try {
