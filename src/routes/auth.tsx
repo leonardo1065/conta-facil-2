@@ -52,7 +52,7 @@ function AuthPage() {
   async function cadastrar(e: React.FormEvent) {
     e.preventDefault();
     setCarregando(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password: senha,
       options: {
@@ -61,8 +61,17 @@ function AuthPage() {
       },
     });
     setCarregando(false);
-    if (error) return toast.error(error.message);
-    toast.success("Conta criada! Verifique seu e-mail se a confirmação estiver ativa.");
+    if (error) {
+      if (/already registered|already exists/i.test(error.message)) {
+        return toast.error("Este e-mail já possui uma conta. Use a opção Entrar.");
+      }
+      return toast.error(`Não foi possível criar a conta: ${error.message}`);
+    }
+    if (!data.session) {
+      toast.success("Conta criada! Abra seu e-mail e confirme o cadastro para entrar.");
+      return;
+    }
+    toast.success("Conta criada com sucesso!");
     navigate({ to: "/painel", replace: true });
   }
 

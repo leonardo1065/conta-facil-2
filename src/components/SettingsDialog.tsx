@@ -586,11 +586,10 @@ export function SettingsDialog({
             {resultadoEmail?.ok && (
               <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-2 text-xs text-emerald-600 dark:text-emerald-400">
                 <p className="flex items-center gap-1.5 font-medium">
-                  <CheckCircle2 className="size-3.5" /> Envio gratuito ativado
+                  <CheckCircle2 className="size-3.5" /> Envio pelo Gmail ativado
                 </p>
                 <p className="mt-1">
-                  Para usar o servidor da plataforma, o e-mail informado acima deve ser o mesmo
-                  do seu cadastro no app.
+                  O endereço que recebe os avisos pode ser diferente do e-mail usado no cadastro.
                 </p>
               </div>
             )}
