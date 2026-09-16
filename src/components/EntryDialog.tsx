@@ -480,10 +480,16 @@ export function EntryDialog({ open, onOpenChange, entry, defaultDate }: Props) {
             barcode: res.raw,
             amount: res.amount ? res.amount.toFixed(2).replace(".", ",") : prev.amount,
             due_date: res.dueDate ?? prev.due_date,
+            description:
+              !prev.description.trim() && res.kind === "pix" && res.recipient
+                ? `Pix - ${res.recipient}`
+                : prev.description,
           }));
           toast.success(
-            res.kind === "desconhecido"
-              ? "Código salvo, mas não reconhecido."
+            res.kind === "pix"
+              ? res.amount
+                ? "QR Code Pix interpretado e valor preenchido."
+                : "QR Code Pix interpretado; informe o valor."
               : res.dueDate
                 ? "Valor e vencimento preenchidos pelo código."
                 : "Valor preenchido; confira o vencimento.",
