@@ -4,4 +4,4 @@
 - [x] Usar lpteck@gmail.com como destinatário e Gmail como remetente principal
 - [x] Liberar novos cadastros sem exigir o mesmo e-mail dos avisos e preservar os dados existentes
 - [x] Liberar entrada imediata após criar uma nova conta
-- [ ] Melhorar a leitura e interpretação de QR Code Pix e boleto
+- [x] Melhorar a leitura e interpretação de QR Code Pix e boleto

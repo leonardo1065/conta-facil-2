@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Camera, ClipboardPaste, X } from "lucide-react";
+import { Camera, CheckCircle2, ClipboardPaste, RotateCcw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -18,10 +18,26 @@ export function ScannerDialog({ open, onOpenChange, onDetected }: Props) {
   const [manual, setManual] = useState("");
   const [erro, setErro] = useState<string | null>(null);
   const [lendo, setLendo] = useState(false);
+  const [resultado, setResultado] = useState<ParsedDocument | null>(null);
+
+  function processar(codigo: string): boolean {
+    const parsed = parseScannedCode(codigo);
+    if (parsed.kind === "desconhecido") {
+      setErro("O QR Code não é um Pix válido nem um boleto reconhecido. Tente novamente.");
+      return false;
+    }
+    setResultado(parsed);
+    setErro(null);
+    stopRef.current?.();
+    onDetected(parsed);
+    onOpenChange(false);
+    return true;
+  }
 
   useEffect(() => {
     if (!open) return;
     let cancelado = false;
+    setResultado(null);
 
     (async () => {
       try {
@@ -34,10 +50,7 @@ export function ScannerDialog({ open, onOpenChange, onDetected }: Props) {
           videoRef.current ?? undefined,
           (result) => {
             if (result && !cancelado) {
-              cancelado = true;
-              stopRef.current?.();
-              onDetected(parseScannedCode(result.getText()));
-              onOpenChange(false);
+              if (processar(result.getText())) cancelado = true;
             }
           },
         );
@@ -55,7 +68,7 @@ export function ScannerDialog({ open, onOpenChange, onDetected }: Props) {
       stopRef.current?.();
       stopRef.current = null;
     };
-  }, [open, onDetected, onOpenChange]);
+  }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -63,24 +76,30 @@ export function ScannerDialog({ open, onOpenChange, onDetected }: Props) {
         <DialogHeader>
           <DialogTitle>Escanear boleto ou Pix</DialogTitle>
           <DialogDescription>
-            Aponte a câmera para o código de barras ou QR Code, ou cole a linha digitável.
+            Aponte a câmera para o QR Code Pix ou código de barras do boleto.
           </DialogDescription>
         </DialogHeader>
 
         <div className="overflow-hidden rounded-xl border border-border bg-muted">
-          {erro ? (
-            <div className="flex flex-col items-center gap-2 p-6 text-center text-sm text-muted-foreground">
-              <X className="size-5 text-destructive" />
-              {erro}
-            </div>
-          ) : (
-            <video ref={videoRef} className="aspect-video w-full object-cover" muted playsInline />
-          )}
+          <video ref={videoRef} className="aspect-video w-full object-cover" muted playsInline />
         </div>
+
+        {erro && (
+          <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+            <X className="mt-0.5 size-4 shrink-0" />
+            <span>{erro}</span>
+          </div>
+        )}
+
+        {resultado && (
+          <div className="flex items-center gap-2 rounded-md border border-primary/30 bg-primary/10 p-3 text-sm">
+            <CheckCircle2 className="size-4 text-primary" /> Código interpretado com sucesso.
+          </div>
+        )}
 
         <div className="space-y-2">
           <Label htmlFor="codigo-manual" className="flex items-center gap-2">
-            <ClipboardPaste className="size-4" /> Linha digitável / payload Pix
+            <ClipboardPaste className="size-4" /> Código Pix ou linha digitável
           </Label>
           <Input
             id="codigo-manual"
@@ -95,12 +114,11 @@ export function ScannerDialog({ open, onOpenChange, onDetected }: Props) {
           className="w-full gap-2"
           disabled={manual.trim().length < 10 || lendo}
           onClick={() => {
-            onDetected(parseScannedCode(manual));
-            setManual("");
-            onOpenChange(false);
+            if (processar(manual)) setManual("");
           }}
         >
-          <Camera className="size-4" /> Usar código
+          {erro ? <RotateCcw className="size-4" /> : <Camera className="size-4" />}
+          Interpretar código
         </Button>
       </DialogContent>
     </Dialog>
