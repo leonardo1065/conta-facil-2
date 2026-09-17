@@ -126,7 +126,7 @@ function parsePix(payload: string): ParsedDocument | null {
 
 /** Completa os dados de um Pix dinâmico pela URL pública contida no QR Code. */
 export async function resolveDynamicPix(parsed: ParsedDocument): Promise<ParsedDocument> {
-  if (parsed.kind !== "pix" || !parsed.dynamicUrl || parsed.amount) return parsed;
+  if (parsed.kind !== "pix" || !parsed.dynamicUrl) return parsed;
 
   const rawUrl = parsed.dynamicUrl.startsWith("http") ? parsed.dynamicUrl : `https://${parsed.dynamicUrl}`;
   let url: URL;
