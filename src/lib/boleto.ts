@@ -21,7 +21,10 @@ function dataDoFator(factor: number): string | undefined {
 
 /** Boleto de arrecadação / conta de consumo (começa com 8) */
 function parseArrecadacao(digits: string): ParsedDocument | null {
-  const barcode = digits.length === 48 ? digits.slice(0, 44) : digits;
+  const barcode =
+    digits.length === 48
+      ? digits.slice(0, 11) + digits.slice(12, 23) + digits.slice(24, 35) + digits.slice(36, 47)
+      : digits;
   if (barcode.length !== 44 || barcode[0] !== "8") return null;
 
   const bruto = Number(barcode.slice(4, 15));
