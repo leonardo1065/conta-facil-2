@@ -157,7 +157,7 @@ export async function resolveDynamicPix(parsed: ParsedDocument): Promise<ParsedD
       ...parsed,
       amount: normalizeAmount(payload.valor?.original) ?? parsed.amount,
       dueDate: dueDate ?? parsed.dueDate,
-      recipient: parsed.recipient ?? payload.devedor?.nome?.trim() || undefined,
+      recipient: parsed.recipient ?? (payload.devedor?.nome?.trim() || undefined),
     };
   } catch {
     return parsed;
