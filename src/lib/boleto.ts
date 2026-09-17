@@ -7,6 +7,7 @@ export type ParsedDocument = {
   recipient?: string;
   city?: string;
   txid?: string;
+  dynamicUrl?: string;
   raw: string;
 };
 
@@ -31,6 +32,21 @@ function parseArrecadacao(digits: string): ParsedDocument | null {
   const amount = bruto > 0 ? bruto / 100 : undefined;
 
   return { kind: "boleto", amount, raw: digits };
+}
+
+function normalizeAmount(value: unknown): number | undefined {
+  if (typeof value === "number") return Number.isFinite(value) && value > 0 ? value : undefined;
+  if (typeof value !== "string") return undefined;
+  const normalized = value.trim().replace(/\s/g, "").replace(",", ".");
+  if (!/^\d+(?:\.\d{1,2})?$/.test(normalized)) return undefined;
+  const amount = Number(normalized);
+  return Number.isFinite(amount) && amount > 0 ? amount : undefined;
+}
+
+function normalizeDate(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return match ? `${match[1]}-${match[2]}-${match[3]}` : undefined;
 }
 
 /** Linha digitável (47) ou código de barras (44) de boleto bancário */
@@ -92,17 +108,60 @@ function parsePix(payload: string): ParsedDocument | null {
 
   const fields = parseTlv(normalized);
   const amountValue = fields.find((field) => field.id === "54")?.value;
-  const amount = amountValue ? Number(amountValue) : undefined;
+  const amount = normalizeAmount(amountValue);
+  const merchantAccount = fields.find((field) => field.id >= "26" && field.id <= "51")?.value;
+  const dynamicUrl = merchantAccount ? nestedField(merchantAccount, "25") : undefined;
   const additionalData = fields.find((field) => field.id === "62")?.value;
 
   return {
     kind: "pix",
-    amount: amount && Number.isFinite(amount) && amount > 0 ? amount : undefined,
+    amount,
     recipient: fields.find((field) => field.id === "59")?.value.trim() || undefined,
     city: fields.find((field) => field.id === "60")?.value.trim() || undefined,
     txid: additionalData ? nestedField(additionalData, "05") : undefined,
+    dynamicUrl,
     raw: normalized,
   };
+}
+
+/** Completa os dados de um Pix dinâmico pela URL pública contida no QR Code. */
+export async function resolveDynamicPix(parsed: ParsedDocument): Promise<ParsedDocument> {
+  if (parsed.kind !== "pix" || !parsed.dynamicUrl || parsed.amount) return parsed;
+
+  const rawUrl = parsed.dynamicUrl.startsWith("http") ? parsed.dynamicUrl : `https://${parsed.dynamicUrl}`;
+  let url: URL;
+  try {
+    url = new URL(rawUrl);
+  } catch {
+    return parsed;
+  }
+  if (url.protocol !== "https:") return parsed;
+
+  try {
+    const response = await fetch(url.toString(), { headers: { Accept: "application/json" } });
+    if (!response.ok) return parsed;
+    const payload = (await response.json()) as {
+      valor?: { original?: string | number };
+      calendario?: { dataDeVencimento?: string; criacao?: string; expiracao?: number };
+      devedor?: { nome?: string };
+    };
+    const directDueDate = normalizeDate(payload.calendario?.dataDeVencimento);
+    let dueDate = directDueDate;
+    if (!dueDate && payload.calendario?.criacao && payload.calendario.expiracao) {
+      const expiresAt = new Date(
+        new Date(payload.calendario.criacao).getTime() + payload.calendario.expiracao * 1000,
+      );
+      if (!Number.isNaN(expiresAt.getTime())) dueDate = expiresAt.toISOString().slice(0, 10);
+    }
+    return {
+      ...parsed,
+      amount: normalizeAmount(payload.valor?.original) ?? parsed.amount,
+      dueDate: dueDate ?? parsed.dueDate,
+      recipient: parsed.recipient ?? payload.devedor?.nome?.trim() || undefined,
+    };
+  } catch {
+    return parsed;
+  }
 }
 
 export function parseScannedCode(input: string): ParsedDocument {

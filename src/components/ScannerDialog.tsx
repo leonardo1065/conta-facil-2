@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { parseScannedCode, type ParsedDocument } from "@/lib/boleto";
+import { parseScannedCode, resolveDynamicPix, type ParsedDocument } from "@/lib/boleto";
 
 type Props = {
   open: boolean;
@@ -19,8 +19,9 @@ export function ScannerDialog({ open, onOpenChange, onDetected }: Props) {
   const [erro, setErro] = useState<string | null>(null);
   const [lendo, setLendo] = useState(false);
 
-  function processar(codigo: string): boolean {
-    const parsed = parseScannedCode(codigo);
+  async function processar(codigo: string): Promise<boolean> {
+    const initial = parseScannedCode(codigo);
+    const parsed = initial.kind === "pix" ? await resolveDynamicPix(initial) : initial;
     if (parsed.kind === "desconhecido") {
       setErro("O QR Code não é um Pix válido nem um boleto reconhecido. Tente novamente.");
       return false;
@@ -40,14 +41,34 @@ export function ScannerDialog({ open, onOpenChange, onDetected }: Props) {
       try {
         setErro(null);
         setLendo(true);
-        const { BrowserMultiFormatReader } = await import("@zxing/browser");
-        const reader = new BrowserMultiFormatReader();
+        const [{ BrowserMultiFormatReader }, { BarcodeFormat, DecodeHintType }] = await Promise.all([
+          import("@zxing/browser"),
+          import("@zxing/library"),
+        ]);
+        const hints = new Map();
+        hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+          BarcodeFormat.QR_CODE,
+          BarcodeFormat.ITF,
+          BarcodeFormat.CODE_128,
+          BarcodeFormat.CODABAR,
+        ]);
+        hints.set(DecodeHintType.TRY_HARDER, true);
+        const reader = new BrowserMultiFormatReader(hints, { delayBetweenScanAttempts: 120 });
         const controls = await reader.decodeFromConstraints(
-          { video: { facingMode: { ideal: "environment" } }, audio: false },
+          {
+            video: {
+              facingMode: { ideal: "environment" },
+              width: { ideal: 1920 },
+              height: { ideal: 1080 },
+            },
+            audio: false,
+          },
           videoRef.current ?? undefined,
           (result) => {
             if (result && !cancelado) {
-              if (processar(result.getText())) cancelado = true;
+              void processar(result.getText()).then((accepted) => {
+                if (accepted) cancelado = true;
+              });
             }
           },
         );
@@ -73,12 +94,18 @@ export function ScannerDialog({ open, onOpenChange, onDetected }: Props) {
         <DialogHeader>
           <DialogTitle>Escanear boleto ou Pix</DialogTitle>
           <DialogDescription>
-            Aponte a câmera para o QR Code Pix ou código de barras do boleto.
+            Aponte para o QR Pix ou alinhe horizontalmente as 48 posições do boleto.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="overflow-hidden rounded-xl border border-border bg-muted">
+        <div className="relative overflow-hidden rounded-xl border border-border bg-muted">
           <video ref={videoRef} className="aspect-video w-full object-cover" muted playsInline />
+          <div className="pointer-events-none absolute inset-x-5 top-1/2 h-20 -translate-y-1/2 border-x-2 border-primary">
+            <div className="absolute inset-x-0 top-1/2 h-0.5 -translate-y-1/2 bg-primary shadow-sm" />
+          </div>
+          <p className="pointer-events-none absolute inset-x-0 bottom-2 text-center text-xs font-semibold text-primary-foreground drop-shadow-md">
+            Alinhe todas as barras dentro da faixa
+          </p>
         </div>
 
         {erro && (
@@ -105,7 +132,9 @@ export function ScannerDialog({ open, onOpenChange, onDetected }: Props) {
           className="w-full gap-2"
           disabled={manual.trim().length < 10 || lendo}
           onClick={() => {
-            if (processar(manual)) setManual("");
+            void processar(manual).then((accepted) => {
+              if (accepted) setManual("");
+            });
           }}
         >
           {erro ? <RotateCcw className="size-4" /> : <Camera className="size-4" />}
