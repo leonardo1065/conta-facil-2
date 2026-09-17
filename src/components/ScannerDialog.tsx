@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Camera, CheckCircle2, ClipboardPaste, RotateCcw, X } from "lucide-react";
+import { Camera, ClipboardPaste, RotateCcw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,6 @@ export function ScannerDialog({ open, onOpenChange, onDetected }: Props) {
   const [manual, setManual] = useState("");
   const [erro, setErro] = useState<string | null>(null);
   const [lendo, setLendo] = useState(false);
-  const [resultado, setResultado] = useState<ParsedDocument | null>(null);
 
   function processar(codigo: string): boolean {
     const parsed = parseScannedCode(codigo);
@@ -26,7 +25,6 @@ export function ScannerDialog({ open, onOpenChange, onDetected }: Props) {
       setErro("O QR Code não é um Pix válido nem um boleto reconhecido. Tente novamente.");
       return false;
     }
-    setResultado(parsed);
     setErro(null);
     stopRef.current?.();
     onDetected(parsed);
@@ -37,7 +35,6 @@ export function ScannerDialog({ open, onOpenChange, onDetected }: Props) {
   useEffect(() => {
     if (!open) return;
     let cancelado = false;
-    setResultado(null);
 
     (async () => {
       try {
@@ -45,8 +42,8 @@ export function ScannerDialog({ open, onOpenChange, onDetected }: Props) {
         setLendo(true);
         const { BrowserMultiFormatReader } = await import("@zxing/browser");
         const reader = new BrowserMultiFormatReader();
-        const controls = await reader.decodeFromVideoDevice(
-          undefined,
+        const controls = await reader.decodeFromConstraints(
+          { video: { facingMode: { ideal: "environment" } }, audio: false },
           videoRef.current ?? undefined,
           (result) => {
             if (result && !cancelado) {
@@ -88,12 +85,6 @@ export function ScannerDialog({ open, onOpenChange, onDetected }: Props) {
           <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
             <X className="mt-0.5 size-4 shrink-0" />
             <span>{erro}</span>
-          </div>
-        )}
-
-        {resultado && (
-          <div className="flex items-center gap-2 rounded-md border border-primary/30 bg-primary/10 p-3 text-sm">
-            <CheckCircle2 className="size-4 text-primary" /> Código interpretado com sucesso.
           </div>
         )}
 
