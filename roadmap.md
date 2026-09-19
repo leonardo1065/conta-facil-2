@@ -6,3 +6,4 @@
 - [x] Liberar entrada imediata após criar uma nova conta
 - [x] Corrigir valor e vencimento do Pix e adicionar faixa de captura para boletos de 44, 47 e 48 números
 - [x] Liberar digitação manual do código Pix ou boleto no leitor
+- [x] Corrigir a interpretação de códigos digitados com formatação, quebras ou caracteres confundidos

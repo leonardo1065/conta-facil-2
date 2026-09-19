@@ -103,7 +103,9 @@ function nestedField(value: string, id: string): string | undefined {
 
 /** Payload Pix "copia e cola" (BR Code/EMV). */
 function parsePix(payload: string): ParsedDocument | null {
-  const normalized = payload.replace(/[\r\n]/g, "").trim();
+  // O Pix copia e cola não contém espaços. Alguns aplicativos quebram o
+  // conteúdo em várias linhas ou inserem espaços ao copiar.
+  const normalized = payload.replace(/[\s\u200B-\u200D\uFEFF]/g, "").trim();
   if (!normalized.toUpperCase().includes("BR.GOV.BCB.PIX")) return null;
 
   const fields = parseTlv(normalized);
@@ -122,6 +124,22 @@ function parsePix(payload: string): ParsedDocument | null {
     dynamicUrl,
     raw: normalized,
   };
+}
+
+function normalizeBoletoDigits(input: string): string {
+  const ascii = input
+    .normalize("NFKC")
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .trim();
+  const compact = ascii.replace(/[\s.\-/\\]/g, "");
+
+  // Corrige confusões comuns de leitura/digitação somente quando todo o
+  // conteúdo tem aparência de uma linha numérica.
+  if (/^[0-9OoIl|]+$/.test(compact)) {
+    return compact.replace(/[Oo]/g, "0").replace(/[Il|]/g, "1");
+  }
+
+  return ascii.replace(/\D/g, "");
 }
 
 /** Completa os dados de um Pix dinâmico pela URL pública contida no QR Code. */
@@ -165,8 +183,8 @@ export async function resolveDynamicPix(parsed: ParsedDocument): Promise<ParsedD
 }
 
 export function parseScannedCode(input: string): ParsedDocument {
-  const raw = input.trim();
-  const digits = raw.replace(/\D/g, "");
+  const raw = input.normalize("NFKC").trim();
+  const digits = normalizeBoletoDigits(raw);
 
   const pix = parsePix(raw);
   if (pix) return pix;
@@ -182,4 +200,17 @@ export function parseScannedCode(input: string): ParsedDocument {
   }
 
   return { kind: "desconhecido", raw };
+}
+
+export function invalidCodeMessage(input: string): string {
+  const raw = input.normalize("NFKC").trim();
+  const digits = normalizeBoletoDigits(raw);
+
+  if (/BR\.GOV\.BCB\.PIX/i.test(raw)) {
+    return "O código Pix está incompleto ou foi alterado ao copiar. Copie novamente todo o Pix copia e cola.";
+  }
+  if (digits.length > 0) {
+    return `Foram reconhecidos ${digits.length} números. A linha precisa ter 44, 47 ou 48 números completos.`;
+  }
+  return "O texto informado não é um Pix copia e cola nem uma linha digitável de boleto.";
 }

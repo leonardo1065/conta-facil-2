@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { Camera, ClipboardPaste, RotateCcw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { parseScannedCode, resolveDynamicPix, type ParsedDocument } from "@/lib/boleto";
+import { Textarea } from "@/components/ui/textarea";
+import { invalidCodeMessage, parseScannedCode, resolveDynamicPix, type ParsedDocument } from "@/lib/boleto";
 
 type Props = {
   open: boolean;
@@ -23,7 +23,7 @@ export function ScannerDialog({ open, onOpenChange, onDetected }: Props) {
     const initial = parseScannedCode(codigo);
     const parsed = initial.kind === "pix" ? await resolveDynamicPix(initial) : initial;
     if (parsed.kind === "desconhecido") {
-      setErro("O QR Code não é um Pix válido nem um boleto reconhecido. Tente novamente.");
+      setErro(invalidCodeMessage(codigo));
       return false;
     }
     setErro(null);
@@ -119,24 +119,27 @@ export function ScannerDialog({ open, onOpenChange, onDetected }: Props) {
           <Label htmlFor="codigo-manual" className="flex items-center gap-2">
             <ClipboardPaste className="size-4" /> Código Pix ou linha digitável
           </Label>
-          <Input
+          <Textarea
             id="codigo-manual"
-            inputMode="text"
             autoComplete="off"
-            placeholder="Digite ou cole o código completo"
+            rows={4}
+            placeholder="Digite ou cole os 44, 47 ou 48 números, ou o Pix copia e cola completo"
             value={manual}
             onChange={(e) => {
               setManual(e.target.value);
               if (erro) setErro(null);
             }}
             onKeyDown={(e) => {
-              if (e.key !== "Enter" || manual.trim().length < 10) return;
+              if (e.key !== "Enter" || e.shiftKey || manual.trim().length < 10) return;
               e.preventDefault();
               void processar(manual).then((accepted) => {
                 if (accepted) setManual("");
               });
             }}
           />
+          <p className="text-xs text-muted-foreground">
+            Pontos, espaços, traços e quebras de linha são aceitos.
+          </p>
         </div>
 
         <Button
