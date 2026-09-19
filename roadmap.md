@@ -5,3 +5,4 @@
 - [x] Liberar novos cadastros sem exigir o mesmo e-mail dos avisos e preservar os dados existentes
 - [x] Liberar entrada imediata após criar uma nova conta
 - [x] Corrigir valor e vencimento do Pix e adicionar faixa de captura para boletos de 44, 47 e 48 números
+- [x] Liberar digitação manual do código Pix ou boleto no leitor
