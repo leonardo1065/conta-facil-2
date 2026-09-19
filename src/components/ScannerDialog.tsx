@@ -90,7 +90,7 @@ export function ScannerDialog({ open, onOpenChange, onDetected }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Escanear boleto ou Pix</DialogTitle>
           <DialogDescription>
@@ -122,15 +122,26 @@ export function ScannerDialog({ open, onOpenChange, onDetected }: Props) {
           <Input
             id="codigo-manual"
             inputMode="text"
-            placeholder="00190.00009 01234.567890 ..."
+            autoComplete="off"
+            placeholder="Digite ou cole o código completo"
             value={manual}
-            onChange={(e) => setManual(e.target.value)}
+            onChange={(e) => {
+              setManual(e.target.value);
+              if (erro) setErro(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key !== "Enter" || manual.trim().length < 10) return;
+              e.preventDefault();
+              void processar(manual).then((accepted) => {
+                if (accepted) setManual("");
+              });
+            }}
           />
         </div>
 
         <Button
           className="w-full gap-2"
-          disabled={manual.trim().length < 10 || lendo}
+          disabled={manual.trim().length < 10}
           onClick={() => {
             void processar(manual).then((accepted) => {
               if (accepted) setManual("");
