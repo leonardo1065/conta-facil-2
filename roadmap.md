@@ -7,3 +7,4 @@
 - [x] Corrigir valor e vencimento do Pix e adicionar faixa de captura para boletos de 44, 47 e 48 números
 - [x] Liberar digitação manual do código Pix ou boleto no leitor
 - [x] Corrigir a interpretação de códigos digitados com formatação, quebras ou caracteres confundidos
+- [x] Permitir um segundo e-mail destinatário para todos os avisos

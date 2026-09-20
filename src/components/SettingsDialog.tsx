@@ -147,6 +147,7 @@ export function SettingsDialog({
 
   const [form, setForm] = useState({
     notify_email: "",
+    notify_email_secondary: "",
     whatsapp: "",
     notify_days_before: "3",
     notify_hour: "8",
@@ -165,6 +166,7 @@ export function SettingsDialog({
     setPrevia(null);
     setForm({
       notify_email: settings?.notify_email ?? "",
+      notify_email_secondary: settings?.notify_email_secondary ?? "",
       whatsapp: settings?.whatsapp ?? "",
       notify_days_before: String(settings?.notify_days_before ?? 3),
       notify_hour: String(settings?.notify_hour ?? 8),
@@ -203,6 +205,11 @@ export function SettingsDialog({
       toast.error("E-mail inválido");
       return;
     }
+    const emailSecundario = form.notify_email_secondary.trim();
+    if (emailSecundario && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(emailSecundario)) {
+      toast.error("Segundo e-mail inválido");
+      return;
+    }
     const dias = Math.max(0, Math.min(30, Number(form.notify_days_before) || 0));
     const hora = Math.max(0, Math.min(23, Number(form.notify_hour) || 0));
     const diasSaude = Math.max(0, Math.min(30, Number(form.health_days_before) || 0));
@@ -236,6 +243,7 @@ export function SettingsDialog({
 
       await salvar.mutateAsync({
         notify_email: email || null,
+        notify_email_secondary: emailSecundario || null,
         whatsapp: fone.valido ? fone.e164 : null,
         notify_days_before: dias,
         notify_hour: hora,
@@ -333,6 +341,25 @@ export function SettingsDialog({
             />
             <p className="text-xs text-muted-foreground">
               Os avisos são enviados pela conta Gmail conectada para este endereço.
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="notify_email_secondary" className="flex items-center gap-2">
+              <Mail className="size-4" /> Segundo e-mail para avisos (opcional)
+            </Label>
+            <Input
+              id="notify_email_secondary"
+              type="email"
+              inputMode="email"
+              placeholder="outro@email.com"
+              value={form.notify_email_secondary}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, notify_email_secondary: e.target.value }))
+              }
+            />
+            <p className="text-xs text-muted-foreground">
+              Quando preenchido, cada aviso será enviado separadamente aos dois endereços.
             </p>
           </div>
 
@@ -546,9 +573,11 @@ export function SettingsDialog({
             </p>
             <p className="text-xs text-muted-foreground">
               Envia agora o resumo de avisos para{" "}
-              <span className="font-medium text-foreground">
-                {form.notify_email.trim() || "nenhum e-mail informado"}
-              </span>
+               <span className="font-medium text-foreground">
+                 {[form.notify_email.trim(), form.notify_email_secondary.trim()]
+                   .filter(Boolean)
+                   .join(" e ") || "nenhum e-mail informado"}
+               </span>
               . Salve antes se acabou de alterar o e-mail.
             </p>
             <Button

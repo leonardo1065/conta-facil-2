@@ -264,6 +264,7 @@ export type Database = {
           id: string
           notify_days_before: number
           notify_email: string | null
+          notify_email_secondary: string | null
           notify_enabled: boolean
           notify_health: boolean
           notify_hour: number
@@ -285,6 +286,7 @@ export type Database = {
           id: string
           notify_days_before?: number
           notify_email?: string | null
+          notify_email_secondary?: string | null
           notify_enabled?: boolean
           notify_health?: boolean
           notify_hour?: number
@@ -306,6 +308,7 @@ export type Database = {
           id?: string
           notify_days_before?: number
           notify_email?: string | null
+          notify_email_secondary?: string | null
           notify_enabled?: boolean
           notify_health?: boolean
           notify_hour?: number
