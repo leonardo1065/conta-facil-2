@@ -6,6 +6,7 @@ import { normalizarWhatsapp } from "@/lib/phone";
 export type Settings = {
   display_name: string | null;
   notify_email: string | null;
+  notify_email_secondary: string | null;
   whatsapp: string | null;
   notify_days_before: number;
   notify_enabled: boolean;
@@ -28,7 +29,7 @@ export type Settings = {
 };
 
 const COLS =
-  "display_name, notify_email, whatsapp, notify_days_before, notify_enabled, notify_health, notify_hour, health_days_before, notify_whatsapp, health_notify_email, health_notify_whatsapp, health_via_email, health_via_whatsapp, email_subject_tpl, email_body_tpl, smtp_config";
+  "display_name, notify_email, notify_email_secondary, whatsapp, notify_days_before, notify_enabled, notify_health, notify_hour, health_days_before, notify_whatsapp, health_notify_email, health_notify_whatsapp, health_via_email, health_via_whatsapp, email_subject_tpl, email_body_tpl, smtp_config";
 
 
 export function useSettings() {

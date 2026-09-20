@@ -10,6 +10,7 @@ export type AvisoPerfil = {
   id: string;
   display_name: string | null;
   notify_email: string | null;
+  notify_email_secondary: string | null;
   whatsapp: string | null;
   notify_days_before: number;
   notify_enabled: boolean;
@@ -39,7 +40,7 @@ export type AvisoResumo = {
 };
 
 const PERFIL_COLS =
-  "id, display_name, notify_email, whatsapp, notify_days_before, notify_enabled, notify_health, notify_hour, health_days_before, notify_whatsapp, health_notify_email, health_notify_whatsapp, health_via_email, health_via_whatsapp, email_subject_tpl, email_body_tpl, smtp_config";
+  "id, display_name, notify_email, notify_email_secondary, whatsapp, notify_days_before, notify_enabled, notify_health, notify_hour, health_days_before, notify_whatsapp, health_notify_email, health_notify_whatsapp, health_via_email, health_via_whatsapp, email_subject_tpl, email_body_tpl, smtp_config";
 
 /** Hora atual (0-23) no fuso America/Sao_Paulo. */
 export function horaSaoPaulo(): number {
@@ -70,7 +71,7 @@ export async function perfisParaHora(hora: number): Promise<AvisoPerfil[]> {
     .eq("notify_hour", hora);
   if (error) throw error;
   return ((data ?? []) as AvisoPerfil[]).filter(
-    (p) => p.notify_email || (p.notify_whatsapp && p.whatsapp),
+    (p) => p.notify_email || p.notify_email_secondary || (p.notify_whatsapp && p.whatsapp),
   );
 }
 
@@ -86,7 +87,7 @@ export async function perfisParaReenvio(hora: number): Promise<AvisoPerfil[]> {
     .lt("notify_hour", hora);
   if (error) throw error;
   return ((data ?? []) as AvisoPerfil[]).filter(
-    (p) => p.notify_email || (p.notify_whatsapp && p.whatsapp),
+    (p) => p.notify_email || p.notify_email_secondary || (p.notify_whatsapp && p.whatsapp),
   );
 }
 
@@ -775,40 +776,57 @@ export async function enviarEmailGmail(
       definitivo: true,
     };
   }
+  const destinatarios = [perfil.notify_email, perfil.notify_email_secondary]
+    .map((email) => email?.trim().toLowerCase())
+    .filter((email): email is string => Boolean(email))
+    .filter((email, index, todos) => todos.indexOf(email) === index);
+  if (!destinatarios.length) {
+    return { enviado: false, status: "sem_email", detalhe: "Nenhum e-mail configurado", definitivo: true };
+  }
   try {
-    const resposta = await fetch(
-      "https://connector-gateway.lovable.dev/google_mail/gmail/v1/users/me/messages/send",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${lovableKey}`,
-          "X-Connection-Api-Key": gmailKey,
-          "Content-Type": "application/json",
+    const falhas: string[] = [];
+    for (const destinatario of destinatarios) {
+      const resposta = await fetch(
+        "https://connector-gateway.lovable.dev/google_mail/gmail/v1/users/me/messages/send",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${lovableKey}`,
+            "X-Connection-Api-Key": gmailKey,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            raw: mensagemGmail(destinatario, resumo.assunto, resumo.html, resumo.texto),
+          }),
         },
-        body: JSON.stringify({
-          raw: mensagemGmail(perfil.notify_email!, resumo.assunto, resumo.html, resumo.texto),
-        }),
-      },
-    );
-    if (!resposta.ok) {
-      const corpo = await resposta.text();
-      console.error(`[avisos] Gmail falhou [${resposta.status}]: ${corpo}`);
-      
-      // Detalhe extraído do erro do Google/Gmail 401
-      let erroDetalhado = corpo.slice(0, 500);
-      try {
-        const json = JSON.parse(corpo);
-        if (json.error?.message) erroDetalhado = json.error.message;
-      } catch (e) {}
-
-      return {
-        enviado: false,
-        status: `falha:${resposta.status}`,
-        detalhe: erroDetalhado,
-        definitivo: resposta.status === 401 || resposta.status === 403,
-      };
+      );
+      if (!resposta.ok) {
+        const corpo = await resposta.text();
+        console.error(`[avisos] Gmail falhou [${resposta.status}]: ${corpo}`);
+        let erroDetalhado = corpo.slice(0, 300);
+        try {
+          const json = JSON.parse(corpo) as { error?: { message?: string } };
+          if (json.error?.message) erroDetalhado = json.error.message;
+        } catch {}
+        falhas.push(`${destinatario}: ${erroDetalhado}`);
+        if (resposta.status === 401 || resposta.status === 403) {
+          return {
+            enviado: false,
+            status: `falha:${resposta.status}`,
+            detalhe: falhas.join("; ").slice(0, 500),
+            definitivo: true,
+          };
+        }
+      }
     }
-    return { enviado: true, status: "enviado", detalhe: resumo.assunto };
+    if (falhas.length) {
+      return { enviado: false, status: "falha_parcial", detalhe: falhas.join("; ").slice(0, 500) };
+    }
+    return {
+      enviado: true,
+      status: "enviado",
+      detalhe: `${resumo.assunto} — ${destinatarios.length} destinatário(s)`,
+    };
   } catch (error) {
     const detalhe = error instanceof Error ? error.message : "erro desconhecido";
     return { enviado: false, status: "falha", detalhe: detalhe.slice(0, 500) };
@@ -877,7 +895,7 @@ export async function enviarResumo(
     await registrar("whatsapp", whatsapp);
   }
 
-  if (!perfil.notify_email) {
+  if (!perfil.notify_email && !perfil.notify_email_secondary) {
     return {
       enviado: Boolean(whatsapp?.enviado),
       status: whatsapp?.status ?? "sem_email",
@@ -953,6 +971,7 @@ export async function enviarAvisosSaude(perfil: AvisoPerfil): Promise<
     notify_email: perfil.health_via_email
       ? (perfil.health_notify_email?.trim() || perfil.notify_email)
       : null,
+    notify_email_secondary: perfil.health_via_email ? perfil.notify_email_secondary : null,
     whatsapp: perfil.health_notify_whatsapp?.trim() || perfil.whatsapp,
     notify_whatsapp: Boolean(
       perfil.health_via_whatsapp &&
