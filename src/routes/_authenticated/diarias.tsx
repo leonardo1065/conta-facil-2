@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus, ShoppingBasket, Printer } from "lucide-react";
+import { Plus, ShoppingBasket, Printer, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { AvulsaAddDialog } from "@/components/AvulsaAddDialog";
 import {
   currentMonthRef,
@@ -23,6 +33,7 @@ import {
 } from "@/lib/dates";
 import {
   useAddToAvulsa,
+  useDeleteEntry,
   useEntries,
   useSaveEntry,
   type Entry,
@@ -56,6 +67,8 @@ function Diarias() {
   const { data: entries, isLoading } = useEntries();
   const salvar = useSaveEntry();
   const somar = useAddToAvulsa();
+  const excluir = useDeleteEntry();
+  const [aExcluir, setAExcluir] = useState<Entry | null>(null);
   const [novo, setNovo] = useState(false);
   const [nome, setNome] = useState("");
   const [emSoma, setEmSoma] = useState<Entry | null>(null);
@@ -156,6 +169,18 @@ function Diarias() {
     }
   }
 
+  async function confirmarExclusao() {
+    if (!aExcluir) return;
+    const alvo = aExcluir;
+    setAExcluir(null);
+    try {
+      await excluir.mutateAsync(alvo.id);
+      toast.success(`"${alvo.description}" excluída.`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao excluir conta diária.");
+    }
+  }
+
   const existentes = new Set(contas.map((c) => c.description.toLowerCase()));
   const faltando = SUGESTOES.filter((s) => !existentes.has(s.toLowerCase()));
 
@@ -219,14 +244,27 @@ function Diarias() {
                 key={c.id}
                 className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-soft print:border-none print:shadow-none print:border-b print:border-black print:rounded-none print:px-0 print:py-1 print:text-black"
               >
-                <div className="flex items-center justify-between">
+                <div className="flex items-start justify-between gap-2">
                   <div>
                     <p className="font-semibold">{c.description}</p>
                     <p className="text-2xl font-bold">{formatBRL(acumulado)}</p>
                     <p className="text-xs text-muted-foreground print:hidden">acumulado no mês</p>
                   </div>
-                  <div className="hidden print:block text-right">
-                    <p className="text-sm font-medium">{formatMonth(new Date())}</p>
+                  <div className="flex flex-col items-end gap-1">
+                    <div className="hidden print:block text-right">
+                      <p className="text-sm font-medium">{formatMonth(new Date())}</p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="print:hidden"
+                      aria-label={`Excluir ${c.description}`}
+                      title="Excluir conta diária"
+                      disabled={excluir.isPending}
+                      onClick={() => setAExcluir(c)}
+                    >
+                      <Trash2 className="size-4 text-destructive" />
+                    </Button>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-1.5 print:hidden">
@@ -327,6 +365,27 @@ function Diarias() {
       </Dialog>
 
       <AvulsaAddDialog entry={emSoma} onClose={() => setEmSoma(null)} />
+
+      <AlertDialog open={!!aExcluir} onOpenChange={(o) => !o && setAExcluir(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir conta diária?</AlertDialogTitle>
+            <AlertDialogDescription>
+              “{aExcluir?.description}” será removida definitivamente, junto com os valores
+              lançados neste registro.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => void confirmarExclusao()}
+            >
+              {excluir.isPending ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
