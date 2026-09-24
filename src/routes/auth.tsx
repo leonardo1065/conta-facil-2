@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Wallet } from "lucide-react";
+import { MailCheck, Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
+import { ensureProfile } from "@/lib/profile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,12 +28,26 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
+type Aba = "entrar" | "criar";
+
+function nomeDoUsuario(meta: unknown): string | null {
+  if (!meta || typeof meta !== "object") return null;
+  const valor = (meta as Record<string, unknown>)["full_name"];
+  return typeof valor === "string" && valor.trim() ? valor.trim() : null;
+}
+
 function AuthPage() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [senha, setSenha] = useState("");
-  const [nome, setNome] = useState("");
+  const [aba, setAba] = useState<Aba>("entrar");
   const [carregando, setCarregando] = useState(false);
+  const [confirmacaoPendente, setConfirmacaoPendente] = useState<string | null>(null);
+
+  const [emailLogin, setEmailLogin] = useState("");
+  const [senhaLogin, setSenhaLogin] = useState("");
+
+  const [nome, setNome] = useState("");
+  const [emailNovo, setEmailNovo] = useState("");
+  const [senhaNova, setSenhaNova] = useState("");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -42,42 +57,98 @@ function AuthPage() {
 
   async function entrar(e: React.FormEvent) {
     e.preventDefault();
+    if (carregando) return;
     setCarregando(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
-    setCarregando(false);
-    if (error) {
-      if (/email not confirmed/i.test(error.message)) {
-        return toast.error("Este cadastro ainda aguarda confirmação. Crie a conta novamente para liberar o acesso.");
+    const email = emailLogin.trim();
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password: senhaLogin });
+      if (error) {
+        if (/email not confirmed/i.test(error.message)) {
+          setConfirmacaoPendente(email);
+          toast.error("Sua conta ainda não foi confirmada. Reenvie o link abaixo e abra o e-mail.");
+        } else if (/invalid login credentials/i.test(error.message)) {
+          toast.error("E-mail ou senha incorretos. Se ainda não tem conta, use a aba Criar conta.");
+        } else {
+          toast.error(`Não foi possível entrar: ${error.message}`);
+        }
+        return;
       }
-      return toast.error("E-mail ou senha inválidos.");
+      await ensureProfile(data.user.id, {
+        displayName: nomeDoUsuario(data.user.user_metadata),
+        email: data.user.email ?? email,
+      });
+      navigate({ to: "/painel", replace: true });
+    } finally {
+      setCarregando(false);
     }
-    navigate({ to: "/painel", replace: true });
   }
 
   async function cadastrar(e: React.FormEvent) {
     e.preventDefault();
+    if (carregando) return;
     setCarregando(true);
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password: senha,
-      options: {
-        emailRedirectTo: window.location.origin,
-        data: { full_name: nome },
-      },
-    });
-    setCarregando(false);
-    if (error) {
-      if (/already registered|already exists/i.test(error.message)) {
-        return toast.error("Este e-mail já possui uma conta. Use a opção Entrar.");
+    const email = emailNovo.trim();
+    const apelido = nome.trim();
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password: senhaNova,
+        options: {
+          emailRedirectTo: window.location.origin,
+          data: { full_name: apelido },
+        },
+      });
+
+      if (error) {
+        if (/already registered|already exists|user already/i.test(error.message)) {
+          toast.error("Este e-mail já possui uma conta. Use a aba Entrar.");
+          setEmailLogin(email);
+          setAba("entrar");
+          return;
+        }
+        toast.error(`Não foi possível criar a conta: ${error.message}`);
+        return;
       }
-      return toast.error(`Não foi possível criar a conta: ${error.message}`);
+
+      // O Supabase não devolve erro para e-mail já cadastrado: devolve o usuário
+      // sem identidades. Nesse caso a conta já existe.
+      if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+        toast.error("Este e-mail já possui uma conta. Use a aba Entrar.");
+        setEmailLogin(email);
+        setAba("entrar");
+        return;
+      }
+
+      if (data.user && data.session) {
+        await ensureProfile(data.user.id, { displayName: apelido, email });
+        toast.success("Conta criada com sucesso!");
+        navigate({ to: "/painel", replace: true });
+        return;
+      }
+
+      // Conta criada, mas o primeiro acesso depende da confirmação do e-mail.
+      setConfirmacaoPendente(email);
+      setEmailLogin(email);
+      toast.success("Conta criada! Abra o link enviado para o seu e-mail para liberar o acesso.");
+    } finally {
+      setCarregando(false);
     }
-    if (!data.session) {
-      toast.success("Conta criada. Agora você já pode entrar com seu e-mail e senha.");
-      return;
+  }
+
+  async function reenviar() {
+    if (!confirmacaoPendente || carregando) return;
+    setCarregando(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: confirmacaoPendente,
+        options: { emailRedirectTo: window.location.origin },
+      });
+      if (error) toast.error(`Não foi possível reenviar: ${error.message}`);
+      else toast.success("E-mail de confirmação reenviado.");
+    } finally {
+      setCarregando(false);
     }
-    toast.success("Conta criada com sucesso!");
-    navigate({ to: "/painel", replace: true });
   }
 
   async function google() {
@@ -86,6 +157,14 @@ function AuthPage() {
     });
     if (result.error) return toast.error("Não foi possível entrar com o Google.");
     if (result.redirected) return;
+    const { data } = await supabase.auth.getSession();
+    const user = data.session?.user;
+    if (user) {
+      await ensureProfile(user.id, {
+        displayName: nomeDoUsuario(user.user_metadata),
+        email: user.email ?? null,
+      });
+    }
     navigate({ to: "/painel", replace: true });
   }
 
@@ -100,7 +179,7 @@ function AuthPage() {
         </Link>
 
         <div className="card-elevated p-6">
-          <Tabs defaultValue="entrar">
+          <Tabs value={aba} onValueChange={(v) => setAba(v as Aba)}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="entrar">Entrar</TabsTrigger>
               <TabsTrigger value="criar">Criar conta</TabsTrigger>
@@ -110,14 +189,28 @@ function AuthPage() {
               <form onSubmit={entrar} className="space-y-4 pt-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">E-mail</Label>
-                  <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                  <Input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    value={emailLogin}
+                    onChange={(e) => setEmailLogin(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="senha">Senha</Label>
-                  <Input id="senha" type="password" required value={senha} onChange={(e) => setSenha(e.target.value)} />
+                  <Input
+                    id="senha"
+                    type="password"
+                    autoComplete="current-password"
+                    required
+                    value={senhaLogin}
+                    onChange={(e) => setSenhaLogin(e.target.value)}
+                  />
                 </div>
                 <Button type="submit" className="w-full" disabled={carregando}>
-                  Entrar
+                  {carregando ? "Entrando..." : "Entrar"}
                 </Button>
               </form>
             </TabsContent>
@@ -133,9 +226,10 @@ function AuthPage() {
                   <Input
                     id="email-novo"
                     type="email"
+                    autoComplete="email"
                     required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    value={emailNovo}
+                    onChange={(e) => setEmailNovo(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
@@ -143,18 +237,35 @@ function AuthPage() {
                   <Input
                     id="senha-nova"
                     type="password"
+                    autoComplete="new-password"
                     required
                     minLength={6}
-                    value={senha}
-                    onChange={(e) => setSenha(e.target.value)}
+                    value={senhaNova}
+                    onChange={(e) => setSenhaNova(e.target.value)}
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={carregando}>
-                  Criar conta
+                  {carregando ? "Criando conta..." : "Criar conta"}
                 </Button>
               </form>
             </TabsContent>
           </Tabs>
+
+          {confirmacaoPendente && (
+            <div className="mt-5 flex items-start gap-3 rounded-lg border border-border bg-muted/40 p-3 text-sm">
+              <MailCheck className="mt-0.5 size-4 shrink-0 text-primary" />
+              <div className="space-y-2">
+                <p className="text-muted-foreground">
+                  Enviamos um link de confirmação para{" "}
+                  <span className="font-medium text-foreground">{confirmacaoPendente}</span>. Abra o link para
+                  liberar o acesso e depois entre com sua senha.
+                </p>
+                <Button type="button" variant="outline" size="sm" disabled={carregando} onClick={reenviar}>
+                  Reenviar e-mail de confirmação
+                </Button>
+              </div>
+            </div>
+          )}
 
           <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
             <span className="h-px flex-1 bg-border" /> ou <span className="h-px flex-1 bg-border" />

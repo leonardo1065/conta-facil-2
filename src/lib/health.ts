@@ -102,13 +102,23 @@ export async function buscarCepPorEndereco(
   }));
 }
 
+async function idDoUsuario(): Promise<string> {
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) {
+    throw new Error("Sua sessão expirou. Entre novamente para carregar seus agendamentos.");
+  }
+  return data.user.id;
+}
+
 export function useHealthEvents() {
   return useQuery({
     queryKey: ["health_events"],
     queryFn: async (): Promise<HealthEvent[]> => {
+      const userId = await idDoUsuario();
       const { data, error } = await supabase
         .from("health_events")
         .select("*")
+        .eq("user_id", userId)
         .order("scheduled_date", { ascending: true })
         .order("scheduled_time", { ascending: true, nullsFirst: true });
       if (error) throw error;

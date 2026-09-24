@@ -65,7 +65,7 @@ const iconePorTipo = {
 } as const;
 
 function Saude() {
-  const { data: eventos, isLoading } = useHealthEvents();
+  const { data: eventos, isLoading, error } = useHealthEvents();
   const alternar = useToggleHealthDone();
   const excluir = useDeleteHealthEvent();
   const [dialogo, setDialogo] = useState(false);
@@ -108,6 +108,10 @@ function Saude() {
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Carregando...</p>
+      ) : error ? (
+        <p className="text-sm text-destructive">
+          Não foi possível carregar sua agenda de saúde: {(error as Error).message}
+        </p>
       ) : (
         <>
           <section className="space-y-3">

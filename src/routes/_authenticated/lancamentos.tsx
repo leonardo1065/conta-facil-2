@@ -23,7 +23,7 @@ export const Route = createFileRoute("/_authenticated/lancamentos")({
 type Filtro = "todos" | "pendente" | "pago" | "receita";
 
 function Lancamentos() {
-  const { data: entries, isLoading } = useEntries();
+  const { data: entries, isLoading, error } = useEntries();
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState<Filtro>("todos");
   const [dialogo, setDialogo] = useState(false);
@@ -76,6 +76,10 @@ function Lancamentos() {
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Carregando...</p>
+      ) : error ? (
+        <p className="text-sm text-destructive">
+          Não foi possível carregar seus lançamentos: {(error as Error).message}
+        </p>
       ) : (
         <EntryList
           entries={lista}

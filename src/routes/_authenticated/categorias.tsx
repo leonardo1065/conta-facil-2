@@ -33,7 +33,7 @@ export const Route = createFileRoute("/_authenticated/categorias")({
 const CORES = ["#10b981", "#0ea5e9", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6", "#64748b"];
 
 function Categorias() {
-  const { data: categories } = useCategories();
+  const { data: categories, error } = useCategories();
   const salvar = useSaveCategory();
   const excluir = useDeleteCategory();
   const [aberto, setAberto] = useState(false);
@@ -82,6 +82,12 @@ function Categorias() {
           <Plus className="size-4" /> Nova
         </Button>
       </div>
+
+      {error && (
+        <p className="text-sm text-destructive">
+          Não foi possível carregar suas categorias: {(error as Error).message}
+        </p>
+      )}
 
       <Grupo titulo="Despesas" itens={despesas} onDelete={(id) => excluir.mutate(id)} />
       <Grupo titulo="Receitas" itens={receitas} onDelete={(id) => excluir.mutate(id)} />

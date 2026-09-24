@@ -56,11 +56,24 @@ export type Recurrence = {
 };
 
 
+export async function currentUserId(): Promise<string> {
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) {
+    throw new Error("Sua sessão expirou. Entre novamente para carregar seus lançamentos.");
+  }
+  return data.user.id;
+}
+
 export function useCategories() {
   return useQuery({
     queryKey: ["categories"],
     queryFn: async (): Promise<Category[]> => {
-      const { data, error } = await supabase.from("categories").select("*").order("name");
+      const userId = await currentUserId();
+      const { data, error } = await supabase
+        .from("categories")
+        .select("*")
+        .eq("user_id", userId)
+        .order("name");
       if (error) throw error;
       return (data ?? []) as Category[];
     },
@@ -71,9 +84,11 @@ export function useEntries() {
   return useQuery({
     queryKey: ["entries"],
     queryFn: async (): Promise<Entry[]> => {
+      const userId = await currentUserId();
       const { data, error } = await supabase
         .from("entries")
         .select("*")
+        .eq("user_id", userId)
         .order("due_date", { ascending: true });
       if (error) throw error;
       return (data ?? []).map((e) => ({ ...e, amount: Number(e.amount) })) as Entry[];
