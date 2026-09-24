@@ -137,10 +137,37 @@ export const limparLogsAvisos = createServerFn({ method: "POST" })
     return { ok: true, escopo: data.escopo };
   });
 
-/** Diz se a conta do Gmail está conectada (sem expor credenciais). */
+/** Diz se a conta do Gmail está conectada/configurada (sem expor credenciais). */
 export const statusGmail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
-    const { verificarGmail } = await import("@/lib/avisos.server");
-    return verificarGmail();
+  .handler(async ({ context }) => {
+    const { carregarPerfil, verificarGmail } = await import("@/lib/avisos.server");
+    const perfil = await carregarPerfil(context.userId);
+    return verificarGmail(perfil?.smtp_config ?? null);
+  });
+
+/**
+ * Testa o login no Gmail: usa os dados digitados e, no que faltar, o que já está
+ * salvo em profiles.smtp_config. Envia também uma mensagem de teste.
+ */
+export const testarConexaoGmail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { user?: string; pass?: string } | undefined) => input ?? {})
+  .handler(async ({ data, context }) => {
+    const { carregarPerfil, testarConexaoSmtp } = await import("@/lib/avisos.server");
+    const perfil = await carregarPerfil(context.userId);
+    const salvo = perfil?.smtp_config ?? null;
+    const user = data.user?.trim() || salvo?.user?.trim() || "";
+    const pass = data.pass?.replace(/\s+/g, "") || salvo?.pass || "";
+    return testarConexaoSmtp(
+      {
+        mode: "app",
+        host: salvo?.host ?? "smtp.gmail.com",
+        port: salvo?.port ?? 465,
+        secure: salvo?.secure ?? true,
+        user,
+        pass,
+      },
+      perfil?.notify_email ?? null,
+    );
   });

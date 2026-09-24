@@ -6,6 +6,16 @@ import { normalizarWhatsapp } from "./phone";
 import { renderizarTemplate, type TemplateContexto } from "./email-template";
 
 
+export type SmtpConfig = {
+  /** "app" = senha de app do Gmail; "oauth" = autorização pelo Google (conector). */
+  mode?: "app" | "oauth";
+  host?: string;
+  port?: number;
+  secure?: boolean;
+  user?: string;
+  pass?: string;
+};
+
 export type AvisoPerfil = {
   id: string;
   display_name: string | null;
@@ -24,12 +34,7 @@ export type AvisoPerfil = {
   health_via_whatsapp: boolean;
   email_subject_tpl: string | null;
   email_body_tpl: string | null;
-  smtp_config: {
-    host?: string;
-    port?: number;
-    user?: string;
-    pass?: string;
-  } | null;
+  smtp_config: SmtpConfig | null;
 };
 
 export type AvisoResumo = {
@@ -404,7 +409,15 @@ export type ResultadoCanal = {
 };
 
 /** Falhas que não se resolvem com nova tentativa. */
-const STATUS_DEFINITIVOS = ["sem_whatsapp", "sem_twilio", "sem_zapi", "sem_email", "sem_config"];
+const STATUS_DEFINITIVOS = [
+  "sem_whatsapp",
+  "sem_twilio",
+  "sem_zapi",
+  "sem_email",
+  "sem_gmail",
+  "sem_smtp",
+  "sem_config",
+];
 
 const espera = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -761,27 +774,222 @@ function mensagemGmail(para: string, assunto: string, html: string, texto: strin
     .replace(/=+$/, "");
 }
 
-/** Envia o resumo pelo Gmail conectado (gateway de conectores). */
+const GMAIL_SMTP_HOST = "smtp.gmail.com";
+
+/** Explica, em português, o motivo exato da falha de login/envio no Gmail. */
+export function explicarErroSmtp(erro: unknown): string {
+  const codigo = (erro as { code?: string } | null)?.code ?? "";
+  const bruto = erro instanceof Error ? erro.message : String(erro ?? "");
+  const texto = `${codigo} ${bruto}`;
+  if (
+    /EAUTH|Invalid login|Username and Password not accepted|BadCredentials|535|534-5\.7\.8/i.test(
+      texto,
+    )
+  ) {
+    return "O Gmail recusou o login. Use uma senha de app de 16 caracteres (não a senha normal da conta), confirme que ela foi criada para este mesmo endereço e que a verificação em duas etapas está ativa na conta.";
+  }
+  if (/ETIMEDOUT|ESOCKET|ECONNECTION|ECONNREFUSED|Greeting never received|timeout/i.test(texto)) {
+    return "Não foi possível falar com o servidor do Gmail (smtp.gmail.com na porta 465). Confira a conexão e tente novamente.";
+  }
+  if (/certificate|self signed/i.test(texto)) {
+    return "Falha no certificado do servidor de e-mail. Confira o host (smtp.gmail.com) e a porta (465).";
+  }
+  if (/EENVELOPE|5\.5\.1|550|553|no recipients/i.test(texto)) {
+    return `O Gmail recusou o destinatário: ${bruto.slice(0, 200)}`;
+  }
+  return bruto ? `Falha no envio pelo Gmail: ${bruto.slice(0, 300)}` : "Falha no envio pelo Gmail.";
+}
+
+/** Credenciais próprias salvas em profiles.smtp_config (senha de app do Gmail). */
+function smtpDoPerfil(cfg: SmtpConfig | null | undefined): SmtpConfig | null {
+  const user = cfg?.user?.trim();
+  const pass = cfg?.pass?.replace(/\s+/g, "");
+  if (!user || !pass) return null;
+  const porta = cfg?.port ?? 465;
+  return {
+    host: cfg?.host?.trim() || GMAIL_SMTP_HOST,
+    port: porta,
+    secure: cfg?.secure ?? porta === 465,
+    user,
+    pass,
+  };
+}
+
+type OpcoesTransporte = {
+  host?: string;
+  port?: number;
+  secure?: boolean;
+  auth?: { user?: string; pass?: string };
+  connectionTimeout?: number;
+  greetingTimeout?: number;
+  socketTimeout?: number;
+};
+
+type TransporteEmail = {
+  verify: () => Promise<boolean>;
+  sendMail: (mensagem: {
+    from: string;
+    to: string;
+    subject: string;
+    text: string;
+    html: string;
+  }) => Promise<{ messageId?: string }>;
+};
+
+type ModuloNodemailer = {
+  createTransport?: (opcoes: OpcoesTransporte) => TransporteEmail;
+  default?: { createTransport?: (opcoes: OpcoesTransporte) => TransporteEmail };
+};
+
+/** Cria o transporte SMTP do Gmail com as credenciais informadas. */
+async function criarTransporte(cfg: SmtpConfig): Promise<TransporteEmail> {
+  const mod = (await import("nodemailer")) as unknown as ModuloNodemailer;
+  const criar = mod.createTransport ?? mod.default?.createTransport;
+  if (!criar) throw new Error("Não foi possível carregar o componente de envio de e-mail.");
+  return criar({
+    host: cfg.host,
+    port: cfg.port,
+    secure: cfg.secure,
+    auth: { user: cfg.user, pass: cfg.pass },
+    connectionTimeout: 15_000,
+    greetingTimeout: 15_000,
+    socketTimeout: 20_000,
+  });
+}
+
+/** Testa o login no Gmail e envia uma mensagem de teste para o próprio endereço. */
+export async function testarConexaoSmtp(
+  config: SmtpConfig,
+  destino?: string | null,
+): Promise<{ ok: boolean; detalhe: string; passo?: "credenciais" | "conexao" | "envio" }> {
+  const cfg = smtpDoPerfil(config);
+  if (!cfg) {
+    return {
+      ok: false,
+      passo: "credenciais",
+      detalhe: "Informe o e-mail do Gmail e a senha de app (16 caracteres) para testar a conexão.",
+    };
+  }
+  try {
+    const transporte = await criarTransporte(cfg);
+    await transporte.verify();
+  } catch (e) {
+    console.error("[avisos] falha no login SMTP do Gmail:", e);
+    return { ok: false, passo: "conexao", detalhe: explicarErroSmtp(e) };
+  }
+
+  const para = (destino ?? "").trim() || cfg.user!;
+  try {
+    const transporte = await criarTransporte(cfg);
+    await transporte.sendMail({
+      from: `"Agenda de Contas" <${cfg.user}>`,
+      to: para,
+      subject: "Teste de conexão — Agenda de Contas",
+      text: "Login no Gmail confirmado. Os avisos de vencimento serão enviados deste endereço.",
+      html: '<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#0f172a">Login no Gmail confirmado. Os avisos de vencimento serão enviados deste endereço.</div>',
+    });
+    return {
+      ok: true,
+      passo: "envio",
+      detalhe: `Login no Gmail aceito. E-mail de teste enviado para ${para}.`,
+    };
+  } catch (e) {
+    console.error("[avisos] falha no envio de teste pelo Gmail:", e);
+    return { ok: false, passo: "envio", detalhe: explicarErroSmtp(e) };
+  }
+}
+
+/** Destinatários do aviso, sem repetição e em minúsculas. */
+function destinatariosEmail(perfil: AvisoPerfil): string[] {
+  return [perfil.notify_email, perfil.notify_email_secondary]
+    .map((email) => email?.trim().toLowerCase())
+    .filter((email): email is string => Boolean(email))
+    .filter((email, index, todos) => todos.indexOf(email) === index);
+}
+
+/** Envia o resumo pela conta Gmail do próprio usuário (senha de app salva). */
+export async function enviarEmailSmtp(
+  perfil: AvisoPerfil,
+  resumo: AvisoResumo,
+): Promise<ResultadoCanal> {
+  const cfg = smtpDoPerfil(perfil.smtp_config);
+  if (!cfg) {
+    return {
+      enviado: false,
+      status: "sem_smtp",
+      detalhe:
+        "Nenhuma conta do Gmail conectada. Abra as configurações de avisos e salve o e-mail e a senha de app em “Conectar ao Gmail”.",
+      definitivo: true,
+    };
+  }
+  const destinatarios = destinatariosEmail(perfil);
+  if (!destinatarios.length) {
+    return {
+      enviado: false,
+      status: "sem_email",
+      detalhe: "Nenhum e-mail configurado",
+      definitivo: true,
+    };
+  }
+  try {
+    const transporte = await criarTransporte(cfg);
+    const info = await transporte.sendMail({
+      from: `"Agenda de Contas" <${cfg.user}>`,
+      to: destinatarios.join(", "),
+      subject: resumo.assunto,
+      text: resumo.texto,
+      html: resumo.html,
+    });
+    return {
+      enviado: true,
+      status: "enviado",
+      detalhe: `${resumo.assunto} — ${destinatarios.length} destinatário(s)${
+        info?.messageId ? ` (id ${info.messageId})` : ""
+      }`,
+    };
+  } catch (e) {
+    const codigo = (e as { code?: string } | null)?.code ?? "";
+    const definitivo = /EAUTH|535|534/i.test(
+      `${codigo} ${e instanceof Error ? e.message : ""}`,
+    );
+    console.error(`[avisos] Gmail SMTP falhou [${codigo}]:`, e);
+    return {
+      enviado: false,
+      status: "falha_smtp",
+      detalhe: explicarErroSmtp(e),
+      definitivo,
+    };
+  }
+}
+
+/**
+ * Envia o resumo por e-mail. Usa a conta Gmail do usuário (senha de app salva em
+ * profiles.smtp_config) e, quando ela não existe, o Gmail do conector.
+ */
 export async function enviarEmailGmail(
   perfil: AvisoPerfil,
   resumo: AvisoResumo,
 ): Promise<ResultadoCanal> {
+  if (smtpDoPerfil(perfil.smtp_config)) return enviarEmailSmtp(perfil, resumo);
   const lovableKey = process.env.LOVABLE_API_KEY;
   const gmailKey = process.env.GOOGLE_MAIL_API_KEY;
   if (!lovableKey || !gmailKey) {
     return {
       enviado: false,
       status: "sem_gmail",
-      detalhe: "Gmail não conectado",
+      detalhe:
+        "Nenhuma conta do Gmail conectada. Abra as configurações de avisos e use “Conectar ao Gmail”.",
       definitivo: true,
     };
   }
-  const destinatarios = [perfil.notify_email, perfil.notify_email_secondary]
-    .map((email) => email?.trim().toLowerCase())
-    .filter((email): email is string => Boolean(email))
-    .filter((email, index, todos) => todos.indexOf(email) === index);
+  const destinatarios = destinatariosEmail(perfil);
   if (!destinatarios.length) {
-    return { enviado: false, status: "sem_email", detalhe: "Nenhum e-mail configurado", definitivo: true };
+    return {
+      enviado: false,
+      status: "sem_email",
+      detalhe: "Nenhum e-mail configurado",
+      definitivo: true,
+    };
   }
   try {
     const falhas: string[] = [];
@@ -1028,11 +1236,19 @@ export async function pararTentativasHoje(userId: string): Promise<boolean> {
 
 
 /** Diz se a conta do Gmail está conectada e qual endereço será usado no envio. */
-export async function verificarGmail(): Promise<{
+export async function verificarGmail(smtp?: SmtpConfig | null): Promise<{
   conectado: boolean;
   email: string | null;
   detalhe: string;
 }> {
+  const cfg = smtpDoPerfil(smtp);
+  if (cfg) {
+    return {
+      conectado: true,
+      email: cfg.user ?? null,
+      detalhe: `Configurado para enviar como ${cfg.user} (senha de app salva). Use “Testar conexão” para confirmar o login.`,
+    };
+  }
   const lovableKey = process.env.LOVABLE_API_KEY;
   const gmailKey = process.env.GOOGLE_MAIL_API_KEY;
   if (!lovableKey || !gmailKey) {

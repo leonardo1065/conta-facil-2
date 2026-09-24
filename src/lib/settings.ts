@@ -20,12 +20,18 @@ export type Settings = {
   health_via_whatsapp: boolean;
   email_subject_tpl: string | null;
   email_body_tpl: string | null;
-  smtp_config?: {
-    host?: string;
-    port?: number;
-    user?: string;
-    pass?: string;
-  } | null;
+  smtp_config?: SmtpConfig | null;
+};
+
+/** Credenciais de envio do Gmail guardadas em profiles.smtp_config. */
+export type SmtpConfig = {
+  /** "app" = senha de app do Gmail; "oauth" = autorização pelo Google (conector). */
+  mode?: "app" | "oauth";
+  host?: string;
+  port?: number;
+  secure?: boolean;
+  user?: string;
+  pass?: string;
 };
 
 const COLS =

@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   Clock,
   HeartPulse,
+  KeyRound,
   Mail,
   MessageCircle,
   RefreshCw,
@@ -26,12 +27,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSaveSettings, useSettings, whatsappLink } from "@/lib/settings";
+import type { Settings } from "@/lib/settings";
 import { normalizarWhatsapp } from "@/lib/phone";
 import {
   enviarAvisoTeste,
   statusGmail,
   statusWhatsapp,
+  testarConexaoGmail,
   testarWhatsapp,
   validarWhatsapp,
 } from "@/lib/avisos.functions";
@@ -75,6 +79,11 @@ export function SettingsDialog({
     staleTime: 30_000,
   });
   const [ajudaGmail, setAjudaGmail] = useState(false);
+  const testarGmail = useServerFn(testarConexaoGmail);
+  const [testandoGmail, setTestandoGmail] = useState(false);
+  const [resultadoGmail, setResultadoGmail] = useState<{ ok: boolean; detalhe: string } | null>(
+    null,
+  );
 
 
 
@@ -159,11 +168,15 @@ export function SettingsDialog({
     health_notify_whatsapp: "",
     health_via_email: true,
     health_via_whatsapp: false,
+    smtp_mode: "app" as "app" | "oauth",
+    smtp_user: "",
+    smtp_pass: "",
   });
 
   useEffect(() => {
     if (!open) return;
     setPrevia(null);
+    setResultadoGmail(null);
     setForm({
       notify_email: settings?.notify_email ?? "",
       notify_email_secondary: settings?.notify_email_secondary ?? "",
@@ -178,6 +191,9 @@ export function SettingsDialog({
       health_notify_whatsapp: settings?.health_notify_whatsapp ?? "",
       health_via_email: settings?.health_via_email ?? true,
       health_via_whatsapp: settings?.health_via_whatsapp ?? false,
+      smtp_mode: settings?.smtp_config?.mode === "oauth" ? "oauth" : "app",
+      smtp_user: settings?.smtp_config?.user ?? "",
+      smtp_pass: "",
     });
   }, [open, settings]);
 
@@ -239,7 +255,30 @@ export function SettingsDialog({
       return;
     }
     try {
-      const smtp_config = null;
+      const smtpUser = form.smtp_user.trim();
+      const smtpPassDigitada = form.smtp_pass.replace(/\s+/g, "");
+      let smtp_config: Settings["smtp_config"] = null;
+      if (form.smtp_mode === "oauth") {
+        smtp_config = { mode: "oauth" };
+      } else if (smtpUser) {
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(smtpUser)) {
+          toast.error("Informe um e-mail do Gmail válido");
+          return;
+        }
+        const senha = smtpPassDigitada || (settings?.smtp_config?.pass ?? "");
+        if (!senha) {
+          toast.error("Informe a senha de app do Gmail (16 caracteres, sem espaços)");
+          return;
+        }
+        smtp_config = {
+          mode: "app",
+          host: "smtp.gmail.com",
+          port: 465,
+          secure: true,
+          user: smtpUser,
+          pass: senha,
+        };
+      }
 
       await salvar.mutateAsync({
         notify_email: email || null,
@@ -258,6 +297,7 @@ export function SettingsDialog({
         smtp_config,
       });
       toast.success("Configurações salvas");
+      void revalidarGmail();
       onOpenChange(false);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Não foi possível salvar");
@@ -296,6 +336,74 @@ export function SettingsDialog({
       toast.error(detalhe);
     } finally {
       setEnviando(false);
+    }
+  }
+
+  async function onSalvarConexao() {
+    const smtpUser = form.smtp_user.trim();
+    const digitada = form.smtp_pass.replace(/\s+/g, "");
+    let smtp_config: Settings["smtp_config"] = null;
+
+    if (form.smtp_mode === "oauth") {
+      smtp_config = { mode: "oauth" };
+    } else if (smtpUser) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(smtpUser)) {
+        toast.error("Informe um e-mail do Gmail válido");
+        return;
+      }
+      const senha = digitada || (settings?.smtp_config?.pass ?? "");
+      if (!senha) {
+        toast.error("Informe a senha de app do Gmail (16 caracteres, sem espaços)");
+        return;
+      }
+      smtp_config = {
+        mode: "app",
+        host: "smtp.gmail.com",
+        port: 465,
+        secure: true,
+        user: smtpUser,
+        pass: senha,
+      };
+    }
+
+    try {
+      await salvar.mutateAsync({ smtp_config });
+      setResultadoGmail(null);
+      toast.success(smtp_config ? "Conexão do Gmail salva" : "Conexão do Gmail removida");
+      await revalidarGmail();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível salvar a conexão");
+    }
+  }
+
+  async function onTestarGmail() {
+    if (form.smtp_mode === "oauth") {
+      const { data } = await revalidarGmail();
+      const detalhe = data?.detalhe ?? "Gmail não conectado.";
+      setResultadoGmail({ ok: Boolean(data?.conectado), detalhe });
+      if (data?.conectado) toast.success(detalhe);
+      else toast.error(detalhe);
+      return;
+    }
+
+    setTestandoGmail(true);
+    setResultadoGmail(null);
+    try {
+      const r = await testarGmail({
+        data: {
+          user: form.smtp_user.trim() || undefined,
+          pass: form.smtp_pass.replace(/\s+/g, "") || undefined,
+        },
+      });
+      setResultadoGmail({ ok: r.ok, detalhe: r.detalhe });
+      if (r.ok) toast.success("Login no Gmail confirmado");
+      else toast.error(r.detalhe);
+    } catch (e) {
+      const detalhe = e instanceof Error ? e.message : "Falha ao testar a conexão";
+      setResultadoGmail({ ok: false, detalhe });
+      toast.error(detalhe);
+    } finally {
+      setTestandoGmail(false);
     }
   }
 
@@ -474,16 +582,100 @@ export function SettingsDialog({
 
           <div className="space-y-2 rounded-xl border border-border/70 p-3">
             <p className="flex items-center gap-2 text-sm font-medium">
-              <Mail className="size-4" /> Conta do Gmail para enviar os avisos
+              <KeyRound className="size-4" /> Conectar ao Gmail
             </p>
+            <p className="text-xs text-muted-foreground">
+              Os avisos saem da sua própria conta do Gmail. Autorize o envio com uma senha de app
+              (mais simples) ou pelo Google e confirme com “Testar conexão”.
+            </p>
+
+            <Tabs
+              value={form.smtp_mode}
+              onValueChange={(v) => setForm((f) => ({ ...f, smtp_mode: v as "app" | "oauth" }))}
+            >
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="app">Senha de app</TabsTrigger>
+                <TabsTrigger value="oauth">Autorizar pelo Google</TabsTrigger>
+              </TabsList>
+            </Tabs>
+
+            {form.smtp_mode === "app" && (
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="smtp_user" className="flex items-center gap-2">
+                    <Mail className="size-4" /> E-mail do Gmail
+                  </Label>
+                  <Input
+                    id="smtp_user"
+                    type="email"
+                    inputMode="email"
+                    autoComplete="email"
+                    placeholder="sua.conta@gmail.com"
+                    value={form.smtp_user}
+                    onChange={(e) => setForm((f) => ({ ...f, smtp_user: e.target.value }))}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    É deste endereço que os avisos serão enviados.
+                  </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="smtp_pass" className="flex items-center gap-2">
+                    <KeyRound className="size-4" /> Senha de app do Gmail
+                  </Label>
+                  <Input
+                    id="smtp_pass"
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder={
+                      settings?.smtp_config?.pass
+                        ? "Senha já salva — preencha só para trocar"
+                        : "16 caracteres, sem espaços"
+                    }
+                    value={form.smtp_pass}
+                    onChange={(e) => setForm((f) => ({ ...f, smtp_pass: e.target.value }))}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Crie em myaccount.google.com/apppasswords — precisa da verificação em duas
+                    etapas ativa na conta. Não use a senha normal de acesso: o Gmail recusa.
+                  </p>
+                </div>
+              </div>
+            )}
+
             <p className="text-xs text-muted-foreground">
               {verificandoGmail && !gmail
                 ? "Verificando…"
                 : gmail?.conectado
                   ? gmail.detalhe
-                  : "Ainda sem conta do Gmail autorizada. A autorização é feita uma única vez pelo cartão “Conectar Gmail” que aparece na conversa do assistente; depois use o botão abaixo para confirmar aqui."}
+                  : form.smtp_mode === "app"
+                    ? "Nenhuma conta do Gmail salva ainda. Preencha o e-mail e a senha de app e toque em “Salvar conexão”."
+                    : "Nenhuma conta do Gmail autorizada pelo Google ainda."}
             </p>
             <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                className="gap-2"
+                disabled={salvar.isPending}
+                onClick={onSalvarConexao}
+              >
+                <KeyRound className="size-4" />
+                {salvar.isPending ? "Salvando…" : "Salvar conexão"}
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                disabled={testandoGmail}
+                onClick={onTestarGmail}
+              >
+                <Zap className="size-4" />
+                {testandoGmail ? "Testando…" : "Testar conexão"}
+              </Button>
+              {form.smtp_mode === "oauth" && (
               <Button
                 type="button"
                 variant={gmail?.conectado ? "outline" : "default"}
@@ -509,10 +701,11 @@ export function SettingsDialog({
                   ? "Verificando…"
                   : gmail?.conectado
                     ? "Verificar conexão"
-                    : "Verificar conexão do Gmail"}
+                    : "Verificar conexão"}
               </Button>
+              )}
 
-              {!verificandoGmail && gmail && !gmail.conectado && (
+              {form.smtp_mode === "oauth" && !verificandoGmail && gmail && !gmail.conectado && (
                 <Button
                   type="button"
                   variant="destructive"
@@ -542,9 +735,26 @@ export function SettingsDialog({
                   <CheckCircle2 className="size-3.5" /> Conectado
                 </span>
               )}
+
+              {resultadoGmail && (
+                <p
+                  className={
+                    resultadoGmail.ok
+                      ? "flex w-full items-start gap-1.5 text-xs text-emerald-600 dark:text-emerald-400"
+                      : "flex w-full items-start gap-1.5 text-xs text-destructive"
+                  }
+                >
+                  {resultadoGmail.ok ? (
+                    <CheckCircle2 className="mt-0.5 size-3.5 shrink-0" />
+                  ) : (
+                    <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
+                  )}
+                  {resultadoGmail.detalhe}
+                </p>
+              )}
             </div>
 
-            {ajudaGmail && !gmail?.conectado && (
+            {form.smtp_mode === "oauth" && ajudaGmail && !gmail?.conectado && (
               <div className="space-y-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs">
                 <p className="font-medium">Como concluir a autorização do Google:</p>
                 <ol className="list-decimal space-y-1 pl-4 text-muted-foreground">
