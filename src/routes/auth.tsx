@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { MailCheck, Wallet } from "lucide-react";
+import { AlertCircle, MailCheck, Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { ensureProfile } from "@/lib/profile";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,6 +30,10 @@ export const Route = createFileRoute("/auth")({
 });
 
 type Aba = "entrar" | "criar";
+type ErroAuth = { message?: string | null; code?: string | null } | null | undefined;
+
+const SENHA_MINIMA = 6;
+const ESPERA_REENVIO = 60;
 
 function nomeDoUsuario(meta: unknown): string | null {
   if (!meta || typeof meta !== "object") return null;
@@ -36,18 +41,104 @@ function nomeDoUsuario(meta: unknown): string | null {
   return typeof valor === "string" && valor.trim() ? valor.trim() : null;
 }
 
+function emailValido(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+}
+
+function contem(texto: string, padroes: RegExp[]): boolean {
+  return padroes.some((p) => p.test(texto));
+}
+
+function textoDoErro(error: ErroAuth): string {
+  return `${error?.code ?? ""} ${error?.message ?? ""}`.trim().toLowerCase();
+}
+
+function emailJaCadastrado(error: ErroAuth): boolean {
+  return contem(textoDoErro(error), [
+    /user_already_exists/,
+    /email_exists/,
+    /already registered/,
+    /already exists/,
+    /user already/,
+  ]);
+}
+
+function emailNaoConfirmado(error: ErroAuth): boolean {
+  return contem(textoDoErro(error), [/email not confirmed/, /not confirmed/]);
+}
+
+/**
+ * Traduz os erros que o Supabase devolve no login/cadastro para uma mensagem
+ * que explique exatamente o que aconteceu.
+ */
+function traduzirErro(error: ErroAuth, contexto: Aba): string {
+  const texto = textoDoErro(error);
+
+  if (!texto) {
+    return contexto === "criar"
+      ? "Não foi possível criar a conta. Tente novamente em alguns instantes."
+      : "Não foi possível entrar. Tente novamente em alguns instantes.";
+  }
+
+  if (emailJaCadastrado(error)) {
+    return "Este e-mail já possui uma conta. Use a aba Entrar para acessar.";
+  }
+  if (contem(texto, [/weak_password/, /password should be at least/, /password is too short/])) {
+    return `A senha é muito fraca. Use pelo menos ${SENHA_MINIMA} caracteres.`;
+  }
+  if (contem(texto, [/email_address_invalid/, /invalid email/, /unable to validate email/])) {
+    return "E-mail inválido. Confira o endereço digitado.";
+  }
+  if (contem(texto, [/signup_disabled/, /signups not allowed/, /signup is disabled/])) {
+    return "No momento o cadastro de novas contas está desativado. Tente mais tarde ou entre com o Google.";
+  }
+  if (contem(texto, [/over_email_send_rate_limit/, /email rate limit/])) {
+    return "Enviamos muitos e-mails em pouco tempo. Aguarde alguns minutos e tente novamente.";
+  }
+  if (contem(texto, [/over_request_rate_limit/, /too many requests/, /rate limit/])) {
+    return "Muitas tentativas seguidas. Aguarde um instante e tente novamente.";
+  }
+  if (contem(texto, [/database error saving new user/, /unexpected_failure/, /database error/])) {
+    return "O servidor recusou o cadastro no banco de dados. Tente novamente em alguns instantes.";
+  }
+  if (emailNaoConfirmado(error)) {
+    return "Sua conta ainda não foi confirmada. Abra o link enviado ao seu e-mail.";
+  }
+  if (contem(texto, [/invalid login credentials/])) {
+    return "E-mail ou senha incorretos. Se ainda não tem conta, use a aba Criar conta.";
+  }
+  if (contem(texto, [/captcha/])) {
+    return "Não foi possível validar a proteção anti-robô. Recarregue a página e tente novamente.";
+  }
+  if (contem(texto, [/user_banned/, /banned/])) {
+    return "Este acesso está bloqueado. Entre em contato com o suporte.";
+  }
+  if (contem(texto, [/failed to fetch/, /fetch failed/, /networkerror/, /network error/])) {
+    return "Sem conexão com o servidor. Verifique sua internet e tente novamente.";
+  }
+
+  const original = error?.message?.trim();
+  return original
+    ? `Não foi possível concluir a operação: ${original}`
+    : "Não foi possível concluir a operação. Tente novamente.";
+}
+
 function AuthPage() {
   const navigate = useNavigate();
   const [aba, setAba] = useState<Aba>("entrar");
   const [carregando, setCarregando] = useState(false);
   const [confirmacaoPendente, setConfirmacaoPendente] = useState<string | null>(null);
+  const [segundosReenvio, setSegundosReenvio] = useState(0);
 
   const [emailLogin, setEmailLogin] = useState("");
   const [senhaLogin, setSenhaLogin] = useState("");
+  const [erroLogin, setErroLogin] = useState<string | null>(null);
 
   const [nome, setNome] = useState("");
   const [emailNovo, setEmailNovo] = useState("");
   const [senhaNova, setSenhaNova] = useState("");
+  const [senhaConfirma, setSenhaConfirma] = useState("");
+  const [erroCadastro, setErroCadastro] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -55,72 +146,136 @@ function AuthPage() {
     });
   }, [navigate]);
 
-  async function entrar(e: React.FormEvent) {
+  useEffect(() => {
+    if (segundosReenvio <= 0) return;
+    const timer = window.setTimeout(() => setSegundosReenvio((s) => s - 1), 1000);
+    return () => window.clearTimeout(timer);
+  }, [segundosReenvio]);
+
+  function trocarAba(valor: string) {
+    setAba(valor as Aba);
+    setErroLogin(null);
+    setErroCadastro(null);
+  }
+
+  async function entrar(e: FormEvent) {
     e.preventDefault();
     if (carregando) return;
+
+    const email = emailLogin.trim().toLowerCase();
+    if (!emailValido(email)) {
+      setErroLogin("Digite um e-mail válido, por exemplo nome@provedor.com.");
+      return;
+    }
+    if (!senhaLogin) {
+      setErroLogin("Digite sua senha para entrar.");
+      return;
+    }
+
+    setErroLogin(null);
     setCarregando(true);
-    const email = emailLogin.trim();
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password: senhaLogin });
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password: senhaLogin,
+      });
+
       if (error) {
-        if (/email not confirmed/i.test(error.message)) {
+        const mensagem = traduzirErro(error, "entrar");
+        setErroLogin(mensagem);
+        toast.error(mensagem);
+        if (emailNaoConfirmado(error)) {
           setConfirmacaoPendente(email);
-          toast.error("Sua conta ainda não foi confirmada. Reenvie o link abaixo e abra o e-mail.");
-        } else if (/invalid login credentials/i.test(error.message)) {
-          toast.error("E-mail ou senha incorretos. Se ainda não tem conta, use a aba Criar conta.");
-        } else {
-          toast.error(`Não foi possível entrar: ${error.message}`);
+          setEmailLogin(email);
         }
         return;
       }
+
       await ensureProfile(data.user.id, {
         displayName: nomeDoUsuario(data.user.user_metadata),
         email: data.user.email ?? email,
       });
       navigate({ to: "/painel", replace: true });
+    } catch {
+      const mensagem = "Sem conexão com o servidor. Verifique sua internet e tente novamente.";
+      setErroLogin(mensagem);
+      toast.error(mensagem);
     } finally {
       setCarregando(false);
     }
   }
 
-  async function cadastrar(e: React.FormEvent) {
+  async function cadastrar(e: FormEvent) {
     e.preventDefault();
     if (carregando) return;
-    setCarregando(true);
-    const email = emailNovo.trim();
+
+    const email = emailNovo.trim().toLowerCase();
     const apelido = nome.trim();
+
+    if (apelido.length === 1) {
+      setErroCadastro("O nome precisa ter pelo menos 2 letras (pode deixar em branco se preferir).");
+      return;
+    }
+    if (!emailValido(email)) {
+      setErroCadastro("Digite um e-mail válido, por exemplo nome@provedor.com.");
+      return;
+    }
+    if (senhaNova.length < SENHA_MINIMA) {
+      setErroCadastro(`A senha precisa ter pelo menos ${SENHA_MINIMA} caracteres.`);
+      return;
+    }
+    if (senhaNova !== senhaConfirma) {
+      setErroCadastro("As duas senhas não são iguais. Confira o que foi digitado.");
+      return;
+    }
+
+    setErroCadastro(null);
+    setCarregando(true);
+    const apelidoFinal = apelido || email.split("@")[0] || null;
+
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
         password: senhaNova,
         options: {
-          emailRedirectTo: window.location.origin,
-          data: { full_name: apelido },
+          emailRedirectTo: `${window.location.origin}/auth`,
+          data: { full_name: apelidoFinal },
         },
       });
 
       if (error) {
-        if (/already registered|already exists|user already/i.test(error.message)) {
-          toast.error("Este e-mail já possui uma conta. Use a aba Entrar.");
+        const mensagem = traduzirErro(error, "criar");
+        if (emailJaCadastrado(error)) {
           setEmailLogin(email);
           setAba("entrar");
-          return;
+          setErroLogin(mensagem);
+        } else {
+          setErroCadastro(mensagem);
         }
-        toast.error(`Não foi possível criar a conta: ${error.message}`);
+        toast.error(mensagem);
         return;
       }
 
       // O Supabase não devolve erro para e-mail já cadastrado: devolve o usuário
       // sem identidades. Nesse caso a conta já existe.
       if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
-        toast.error("Este e-mail já possui uma conta. Use a aba Entrar.");
+        const mensagem = "Este e-mail já possui uma conta. Use a aba Entrar para acessar.";
         setEmailLogin(email);
         setAba("entrar");
+        setErroLogin(mensagem);
+        toast.error(mensagem);
         return;
       }
 
-      if (data.user && data.session) {
-        await ensureProfile(data.user.id, { displayName: apelido, email });
+      if (!data.user) {
+        const mensagem = "O cadastro não foi concluído. Confira os dados e tente novamente.";
+        setErroCadastro(mensagem);
+        toast.error(mensagem);
+        return;
+      }
+
+      if (data.session) {
+        await ensureProfile(data.user.id, { displayName: apelidoFinal, email });
         toast.success("Conta criada com sucesso!");
         navigate({ to: "/painel", replace: true });
         return;
@@ -129,43 +284,68 @@ function AuthPage() {
       // Conta criada, mas o primeiro acesso depende da confirmação do e-mail.
       setConfirmacaoPendente(email);
       setEmailLogin(email);
-      toast.success("Conta criada! Abra o link enviado para o seu e-mail para liberar o acesso.");
+      setSegundosReenvio(ESPERA_REENVIO);
+      setSenhaNova("");
+      setSenhaConfirma("");
+      toast.success("Conta criada! Abra o link enviado ao seu e-mail para liberar o acesso.");
+    } catch {
+      const mensagem =
+        "Não foi possível concluir o cadastro. Verifique sua internet e tente novamente.";
+      setErroCadastro(mensagem);
+      toast.error(mensagem);
     } finally {
       setCarregando(false);
     }
   }
 
   async function reenviar() {
-    if (!confirmacaoPendente || carregando) return;
+    if (!confirmacaoPendente || carregando || segundosReenvio > 0) return;
     setCarregando(true);
     try {
       const { error } = await supabase.auth.resend({
         type: "signup",
         email: confirmacaoPendente,
-        options: { emailRedirectTo: window.location.origin },
+        options: { emailRedirectTo: `${window.location.origin}/auth` },
       });
-      if (error) toast.error(`Não foi possível reenviar: ${error.message}`);
-      else toast.success("E-mail de confirmação reenviado.");
+      if (error) {
+        const mensagem = traduzirErro(error, "entrar");
+        toast.error(mensagem);
+        if (/rate limit|muitos e-mails|muitas tentativas/i.test(mensagem)) {
+          setSegundosReenvio(ESPERA_REENVIO);
+        }
+        return;
+      }
+      setSegundosReenvio(ESPERA_REENVIO);
+      toast.success("E-mail de confirmação reenviado. Confira também a caixa de spam.");
+    } catch {
+      toast.error("Não foi possível reenviar agora. Verifique sua internet e tente novamente.");
     } finally {
       setCarregando(false);
     }
   }
 
   async function google() {
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
-    if (result.error) return toast.error("Não foi possível entrar com o Google.");
-    if (result.redirected) return;
-    const { data } = await supabase.auth.getSession();
-    const user = data.session?.user;
-    if (user) {
-      await ensureProfile(user.id, {
-        displayName: nomeDoUsuario(user.user_metadata),
-        email: user.email ?? null,
+    try {
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
       });
+      if (result.error) {
+        toast.error("Não foi possível entrar com o Google. Tente novamente.");
+        return;
+      }
+      if (result.redirected) return;
+      const { data } = await supabase.auth.getSession();
+      const user = data.session?.user;
+      if (user) {
+        await ensureProfile(user.id, {
+          displayName: nomeDoUsuario(user.user_metadata),
+          email: user.email ?? null,
+        });
+      }
+      navigate({ to: "/painel", replace: true });
+    } catch {
+      toast.error("Não foi possível entrar com o Google. Tente novamente.");
     }
-    navigate({ to: "/painel", replace: true });
   }
 
   return (
@@ -179,21 +359,30 @@ function AuthPage() {
         </Link>
 
         <div className="card-elevated p-6">
-          <Tabs value={aba} onValueChange={(v) => setAba(v as Aba)}>
+          <Tabs value={aba} onValueChange={trocarAba}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="entrar">Entrar</TabsTrigger>
               <TabsTrigger value="criar">Criar conta</TabsTrigger>
             </TabsList>
 
             <TabsContent value="entrar">
-              <form onSubmit={entrar} className="space-y-4 pt-4">
+              <form onSubmit={entrar} className="space-y-4 pt-4" noValidate>
+                {erroLogin && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="size-4" />
+                    <AlertTitle>Não foi possível entrar</AlertTitle>
+                    <AlertDescription>{erroLogin}</AlertDescription>
+                  </Alert>
+                )}
+
                 <div className="space-y-2">
                   <Label htmlFor="email">E-mail</Label>
                   <Input
                     id="email"
                     type="email"
+                    inputMode="email"
                     autoComplete="email"
-                    required
+                    placeholder="nome@provedor.com"
                     value={emailLogin}
                     onChange={(e) => setEmailLogin(e.target.value)}
                   />
@@ -204,7 +393,6 @@ function AuthPage() {
                     id="senha"
                     type="password"
                     autoComplete="current-password"
-                    required
                     value={senhaLogin}
                     onChange={(e) => setSenhaLogin(e.target.value)}
                   />
@@ -216,18 +404,33 @@ function AuthPage() {
             </TabsContent>
 
             <TabsContent value="criar">
-              <form onSubmit={cadastrar} className="space-y-4 pt-4">
+              <form onSubmit={cadastrar} className="space-y-4 pt-4" noValidate>
+                {erroCadastro && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="size-4" />
+                    <AlertTitle>Não foi possível criar a conta</AlertTitle>
+                    <AlertDescription>{erroCadastro}</AlertDescription>
+                  </Alert>
+                )}
+
                 <div className="space-y-2">
-                  <Label htmlFor="nome">Nome</Label>
-                  <Input id="nome" value={nome} onChange={(e) => setNome(e.target.value)} />
+                  <Label htmlFor="nome">Nome (opcional)</Label>
+                  <Input
+                    id="nome"
+                    autoComplete="name"
+                    placeholder="Como quer ser chamado"
+                    value={nome}
+                    onChange={(e) => setNome(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email-novo">E-mail</Label>
                   <Input
                     id="email-novo"
                     type="email"
+                    inputMode="email"
                     autoComplete="email"
-                    required
+                    placeholder="nome@provedor.com"
                     value={emailNovo}
                     onChange={(e) => setEmailNovo(e.target.value)}
                   />
@@ -238,10 +441,21 @@ function AuthPage() {
                     id="senha-nova"
                     type="password"
                     autoComplete="new-password"
-                    required
-                    minLength={6}
                     value={senhaNova}
                     onChange={(e) => setSenhaNova(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Mínimo de {SENHA_MINIMA} caracteres.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="senha-nova-confirma">Confirmar senha</Label>
+                  <Input
+                    id="senha-nova-confirma"
+                    type="password"
+                    autoComplete="new-password"
+                    value={senhaConfirma}
+                    onChange={(e) => setSenhaConfirma(e.target.value)}
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={carregando}>
@@ -257,11 +471,19 @@ function AuthPage() {
               <div className="space-y-2">
                 <p className="text-muted-foreground">
                   Enviamos um link de confirmação para{" "}
-                  <span className="font-medium text-foreground">{confirmacaoPendente}</span>. Abra o link para
-                  liberar o acesso e depois entre com sua senha.
+                  <span className="font-medium text-foreground">{confirmacaoPendente}</span>. Abra o link
+                  para liberar o acesso e depois entre com sua senha.
                 </p>
-                <Button type="button" variant="outline" size="sm" disabled={carregando} onClick={reenviar}>
-                  Reenviar e-mail de confirmação
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={carregando || segundosReenvio > 0}
+                  onClick={reenviar}
+                >
+                  {segundosReenvio > 0
+                    ? `Reenviar em ${segundosReenvio}s`
+                    : "Reenviar e-mail de confirmação"}
                 </Button>
               </div>
             </div>
@@ -271,7 +493,7 @@ function AuthPage() {
             <span className="h-px flex-1 bg-border" /> ou <span className="h-px flex-1 bg-border" />
           </div>
 
-          <Button variant="outline" className="w-full" onClick={google}>
+          <Button variant="outline" className="w-full" onClick={google} disabled={carregando}>
             Continuar com Google
           </Button>
         </div>
