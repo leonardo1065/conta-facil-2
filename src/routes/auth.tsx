@@ -233,6 +233,44 @@ function AuthPage() {
     setCarregando(true);
     const apelidoFinal = apelido || email.split("@")[0] || null;
 
+    const tentarEntrarComContaExistente = async () => {
+      const mensagemContaExistente = "Este e-mail já possui uma conta. Tentando entrar...";
+      setEmailLogin(email);
+      setSenhaLogin(senhaNova);
+      setAba("entrar");
+      setErroLogin(mensagemContaExistente);
+
+      const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+        email,
+        password: senhaNova,
+      });
+
+      if (loginError) {
+        const mensagemLogin = traduzirErro(loginError, "entrar");
+        setErroLogin(mensagemLogin);
+        toast.error(mensagemLogin);
+        if (emailNaoConfirmado(loginError)) {
+          setConfirmacaoPendente(email);
+        }
+        return;
+      }
+
+      if (!loginData.user) {
+        const mensagemLogin = "Não foi possível concluir o login. Tente novamente.";
+        setErroLogin(mensagemLogin);
+        toast.error(mensagemLogin);
+        return;
+      }
+
+      await ensureProfile(loginData.user.id, {
+        displayName: nomeDoUsuario(loginData.user.user_metadata) ?? apelidoFinal,
+        email: loginData.user.email ?? email,
+      });
+      setErroLogin(null);
+      toast.success("Login realizado com sucesso!");
+      navigate({ to: "/painel", replace: true });
+    };
+
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -244,26 +282,20 @@ function AuthPage() {
       });
 
       if (error) {
-        const mensagem = traduzirErro(error, "criar");
         if (emailJaCadastrado(error)) {
-          setEmailLogin(email);
-          setAba("entrar");
-          setErroLogin(mensagem);
+          await tentarEntrarComContaExistente();
         } else {
+          const mensagem = traduzirErro(error, "criar");
           setErroCadastro(mensagem);
+          toast.error(mensagem);
         }
-        toast.error(mensagem);
         return;
       }
 
       // O Supabase não devolve erro para e-mail já cadastrado: devolve o usuário
-      // sem identidades. Nesse caso a conta já existe.
+      // sem identidades. Nesse caso, tenta autenticar imediatamente com a senha informada.
       if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
-        const mensagem = "Este e-mail já possui uma conta. Use a aba Entrar para acessar.";
-        setEmailLogin(email);
-        setAba("entrar");
-        setErroLogin(mensagem);
-        toast.error(mensagem);
+        await tentarEntrarComContaExistente();
         return;
       }
 
