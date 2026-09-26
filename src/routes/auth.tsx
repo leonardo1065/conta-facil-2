@@ -435,11 +435,11 @@ function AuthPage() {
                     />
                     <button
                       type="button"
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 z-10 flex size-8 items-center justify-center rounded-md bg-background/80 text-muted-foreground hover:bg-background hover:text-foreground"
                       onClick={() => setMostrarSenhaLogin((v) => !v)}
                       aria-label={mostrarSenhaLogin ? "Esconder senha" : "Mostrar senha"}
                     >
-                      {mostrarSenhaLogin ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      {mostrarSenhaLogin ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
                     </button>
                   </div>
                 </div>
@@ -494,11 +494,11 @@ function AuthPage() {
                     />
                     <button
                       type="button"
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 z-10 flex size-8 items-center justify-center rounded-md bg-background/80 text-muted-foreground hover:bg-background hover:text-foreground"
                       onClick={() => setMostrarSenhaNova((v) => !v)}
                       aria-label={mostrarSenhaNova ? "Esconder senha" : "Mostrar senha"}
                     >
-                      {mostrarSenhaNova ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      {mostrarSenhaNova ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
                     </button>
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -518,11 +518,11 @@ function AuthPage() {
                     />
                     <button
                       type="button"
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 z-10 flex size-8 items-center justify-center rounded-md bg-background/80 text-muted-foreground hover:bg-background hover:text-foreground"
                       onClick={() => setMostrarConfirma((v) => !v)}
                       aria-label={mostrarConfirma ? "Esconder confirmação" : "Mostrar confirmação"}
                     >
-                      {mostrarConfirma ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      {mostrarConfirma ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
                     </button>
                   </div>
                 </div>
