@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { AlertCircle, MailCheck, Wallet } from "lucide-react";
+import { AlertCircle, Eye, EyeOff, MailCheck, Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { ensureProfile } from "@/lib/profile";
@@ -133,12 +133,15 @@ function AuthPage() {
   const [emailLogin, setEmailLogin] = useState("");
   const [senhaLogin, setSenhaLogin] = useState("");
   const [erroLogin, setErroLogin] = useState<string | null>(null);
+  const [mostrarSenhaLogin, setMostrarSenhaLogin] = useState(false);
 
   const [nome, setNome] = useState("");
   const [emailNovo, setEmailNovo] = useState("");
   const [senhaNova, setSenhaNova] = useState("");
   const [senhaConfirma, setSenhaConfirma] = useState("");
   const [erroCadastro, setErroCadastro] = useState<string | null>(null);
+  const [mostrarSenhaNova, setMostrarSenhaNova] = useState(false);
+  const [mostrarConfirma, setMostrarConfirma] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -421,13 +424,24 @@ function AuthPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="senha">Senha</Label>
-                  <Input
-                    id="senha"
-                    type="password"
-                    autoComplete="current-password"
-                    value={senhaLogin}
-                    onChange={(e) => setSenhaLogin(e.target.value)}
-                  />
+                  <div className="relative">
+                    <Input
+                      id="senha"
+                      type={mostrarSenhaLogin ? "text" : "password"}
+                      autoComplete="current-password"
+                      value={senhaLogin}
+                      onChange={(e) => setSenhaLogin(e.target.value)}
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      onClick={() => setMostrarSenhaLogin((v) => !v)}
+                      aria-label={mostrarSenhaLogin ? "Esconder senha" : "Mostrar senha"}
+                    >
+                      {mostrarSenhaLogin ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </button>
+                  </div>
                 </div>
                 <Button type="submit" className="w-full" disabled={carregando}>
                   {carregando ? "Entrando..." : "Entrar"}
@@ -469,26 +483,48 @@ function AuthPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="senha-nova">Senha</Label>
-                  <Input
-                    id="senha-nova"
-                    type="password"
-                    autoComplete="new-password"
-                    value={senhaNova}
-                    onChange={(e) => setSenhaNova(e.target.value)}
-                  />
+                  <div className="relative">
+                    <Input
+                      id="senha-nova"
+                      type={mostrarSenhaNova ? "text" : "password"}
+                      autoComplete="new-password"
+                      value={senhaNova}
+                      onChange={(e) => setSenhaNova(e.target.value)}
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      onClick={() => setMostrarSenhaNova((v) => !v)}
+                      aria-label={mostrarSenhaNova ? "Esconder senha" : "Mostrar senha"}
+                    >
+                      {mostrarSenhaNova ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </button>
+                  </div>
                   <p className="text-xs text-muted-foreground">
                     Mínimo de {SENHA_MINIMA} caracteres.
                   </p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="senha-nova-confirma">Confirmar senha</Label>
-                  <Input
-                    id="senha-nova-confirma"
-                    type="password"
-                    autoComplete="new-password"
-                    value={senhaConfirma}
-                    onChange={(e) => setSenhaConfirma(e.target.value)}
-                  />
+                  <div className="relative">
+                    <Input
+                      id="senha-nova-confirma"
+                      type={mostrarConfirma ? "text" : "password"}
+                      autoComplete="new-password"
+                      value={senhaConfirma}
+                      onChange={(e) => setSenhaConfirma(e.target.value)}
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      onClick={() => setMostrarConfirma((v) => !v)}
+                      aria-label={mostrarConfirma ? "Esconder confirmação" : "Mostrar confirmação"}
+                    >
+                      {mostrarConfirma ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </button>
+                  </div>
                 </div>
                 <Button type="submit" className="w-full" disabled={carregando}>
                   {carregando ? "Criando conta..." : "Criar conta"}
