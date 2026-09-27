@@ -31,7 +31,12 @@ function parseArrecadacao(digits: string): ParsedDocument | null {
   const bruto = Number(barcode.slice(4, 15));
   const amount = bruto > 0 ? bruto / 100 : undefined;
 
-  return { kind: "boleto", amount, raw: digits };
+  // Concessionárias (código 8): fator de vencimento nas posições 19-23 do código de barras.
+  // Base igual ao boleto comum (2022-05-22, fator volta a 1000).
+  const factor = Number(barcode.slice(5, 9));
+  const dueDate = dataDoFator(factor);
+
+  return { kind: "boleto", amount, dueDate, raw: digits };
 }
 
 function normalizeAmount(value: unknown): number | undefined {

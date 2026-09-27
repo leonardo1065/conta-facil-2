@@ -471,31 +471,39 @@ export function EntryDialog({ open, onOpenChange, entry, defaultDate }: Props) {
         </DialogContent>
       </Dialog>
 
-      <ScannerDialog
+            <ScannerDialog
         open={scanner}
         onOpenChange={setScanner}
         onDetected={(res) => {
+          const dataDetectada = res.dueDate;
+          const valorDetectado = res.amount;
           setForm((prev) => ({
             ...prev,
             barcode: res.raw,
-            amount: res.amount ? res.amount.toFixed(2).replace(".", ",") : prev.amount,
-            due_date: res.dueDate ?? prev.due_date,
+            amount: valorDetectado ? valorDetectado.toFixed(2).replace(".", ",") : prev.amount,
+            due_date: dataDetectada ?? prev.due_date,
             description:
               !prev.description.trim() && res.kind === "pix" && res.recipient
                 ? `Pix - ${res.recipient}`
                 : prev.description,
           }));
-          toast.success(
-            res.kind === "pix"
-              ? res.amount
-                ? "QR Code Pix interpretado e valor preenchido."
-                : "QR Code Pix interpretado; informe o valor."
-              : res.dueDate
-                ? "Valor e vencimento preenchidos pelo código."
-                : "Valor preenchido; confira o vencimento.",
-          );
-        }}
 
+          if (res.kind === "pix") {
+            toast.success(
+              valorDetectado
+                ? "QR Code Pix interpretado — valor preenchido."
+                : "QR Code Pix interpretado — informe o valor.",
+            );
+          } else if (dataDetectada && valorDetectado) {
+            toast.success(`Boleto interpretado — vencimento ${new Date(dataDetectada + "T00:00:00").toLocaleDateString("pt-BR")} e valor preenchidos.`);
+          } else if (dataDetectada) {
+            toast.success(`Vencimento detectado (${new Date(dataDetectada + "T00:00:00").toLocaleDateString("pt-BR")}) — preencha o valor.`);
+          } else if (valorDetectado) {
+            toast.success("Valor extraído do código — informe o vencimento.");
+          } else {
+            toast.success("Código lido. Preencha valor e vencimento.");
+          }
+        }}
       />
     </>
   );
