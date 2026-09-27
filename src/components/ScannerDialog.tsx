@@ -50,6 +50,11 @@ export function ScannerDialog({ open, onOpenChange, onDetected }: Props) {
           BarcodeFormat.QR_CODE,
           BarcodeFormat.ITF,
           BarcodeFormat.CODE_128,
+          BarcodeFormat.CODE_39,
+          BarcodeFormat.EAN_13,
+          BarcodeFormat.EAN_8,
+          BarcodeFormat.UPC_A,
+          BarcodeFormat.UPC_E,
           BarcodeFormat.CODABAR,
         ]);
         hints.set(DecodeHintType.TRY_HARDER, true);
@@ -94,17 +99,24 @@ export function ScannerDialog({ open, onOpenChange, onDetected }: Props) {
         <DialogHeader>
           <DialogTitle>Escanear boleto ou Pix</DialogTitle>
           <DialogDescription>
-            Aponte para o QR Pix ou alinhe horizontalmente as 48 posições do boleto.
+            Aponte a câmera para o QR Code Pix ou para as barras do boleto (bancário ou concessionária).
           </DialogDescription>
         </DialogHeader>
 
         <div className="relative overflow-hidden rounded-xl border border-border bg-muted">
           <video ref={videoRef} className="aspect-video w-full object-cover" muted playsInline />
-          <div className="pointer-events-none absolute inset-x-5 top-1/2 h-20 -translate-y-1/2 border-x-2 border-primary">
-            <div className="absolute inset-x-0 top-1/2 h-0.5 -translate-y-1/2 bg-primary shadow-sm" />
+          {/* Faixa de leitura com linha central */}
+          <div className="pointer-events-none absolute inset-x-6 top-1/2 -translate-y-1/2">
+            <div className="relative h-24 rounded-sm border border-primary/70 bg-primary/5">
+              <div className="absolute inset-x-0 top-1/2 h-0.5 -translate-y-1/2 bg-primary shadow-[0_0_6px_rgba(0,0,0,0.5)]" />
+              <div className="absolute left-0 top-1/2 h-0.5 w-3 -translate-y-1/2 bg-primary shadow-sm" />
+              <div className="absolute right-0 top-1/2 h-0.5 w-3 -translate-y-1/2 bg-primary shadow-sm" />
+              <div className="absolute inset-x-0 top-0 h-0.5 bg-primary/40" />
+              <div className="absolute inset-x-0 bottom-0 h-0.5 bg-primary/40" />
+            </div>
           </div>
           <p className="pointer-events-none absolute inset-x-0 bottom-2 text-center text-xs font-semibold text-primary-foreground drop-shadow-md">
-            Alinhe todas as barras dentro da faixa
+            Posicione o QR Code ou as barras dentro da área
           </p>
         </div>
 
