@@ -171,6 +171,7 @@ export function SettingsDialog({
     smtp_mode: "app" as "app" | "oauth",
     smtp_user: "",
     smtp_pass: "",
+    notify_browser: true,
   });
 
   useEffect(() => {
@@ -194,6 +195,7 @@ export function SettingsDialog({
       smtp_mode: settings?.smtp_config?.mode === "oauth" ? "oauth" : "app",
       smtp_user: settings?.smtp_config?.user ?? "",
       smtp_pass: "",
+      notify_browser: settings?.notify_browser ?? true,
     });
   }, [open, settings]);
 
@@ -295,6 +297,7 @@ export function SettingsDialog({
         health_via_email: form.health_via_email,
         health_via_whatsapp: form.health_via_whatsapp,
         smtp_config,
+        notify_browser: form.notify_browser,
       });
       toast.success("Configurações salvas");
       void revalidarGmail();
@@ -1022,26 +1025,37 @@ export function SettingsDialog({
           </div>
 
 
-          <div className="rounded-xl border border-border/70 p-3">
-            <p className="flex items-center gap-2 text-sm font-medium">
-              <Bell className="size-4" /> Avisos no navegador
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
+          <div className="rounded-xl border border-border/70 p-3 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="flex items-center gap-2 text-sm font-medium">
+                  <Bell className="size-4" /> Avisos no navegador
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Envia uma notificação push neste dispositivo no horário agendado.
+                </p>
+              </div>
+              <Switch
+                checked={form.notify_browser}
+                onCheckedChange={(v) => setForm((f) => ({ ...f, notify_browser: v }))}
+                aria-label="Ativar avisos no navegador"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
               {permission === "granted"
-                ? "Ativados neste dispositivo."
+                ? "Permissão já concedida neste dispositivo."
                 : permission === "denied"
-                  ? "Bloqueados nas permissões do navegador."
-                  : "Ainda não ativados neste dispositivo."}
+                  ? "Bloqueado nas permissões do navegador. Permita em Configurações do site."
+                  : "Permissão ainda não solicitada neste dispositivo."}
             </p>
             {permission !== "granted" && (
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                className="mt-2"
                 onClick={pedirPermissao}
               >
-                Ativar avisos
+                Solicitar permissão
               </Button>
             )}
           </div>
