@@ -160,6 +160,7 @@ export function SettingsDialog({
     whatsapp: "",
     notify_days_before: "3",
     notify_hour: "8",
+    notify_on_due_date: true,
     health_days_before: "1",
     notify_enabled: true,
     notify_health: true,
@@ -184,6 +185,7 @@ export function SettingsDialog({
       whatsapp: settings?.whatsapp ?? "",
       notify_days_before: String(settings?.notify_days_before ?? 3),
       notify_hour: String(settings?.notify_hour ?? 8),
+      notify_on_due_date: settings?.notify_on_due_date ?? true,
       health_days_before: String(settings?.health_days_before ?? 1),
       notify_enabled: settings?.notify_enabled ?? true,
       notify_health: settings?.notify_health ?? true,
@@ -288,6 +290,7 @@ export function SettingsDialog({
         whatsapp: fone.valido ? fone.e164 : null,
         notify_days_before: dias,
         notify_hour: hora,
+        notify_on_due_date: form.notify_on_due_date,
         health_days_before: diasSaude,
         notify_enabled: form.notify_enabled,
         notify_health: form.notify_health,
@@ -500,6 +503,22 @@ export function SettingsDialog({
                 onChange={(e) => setForm((f) => ({ ...f, notify_days_before: e.target.value }))}
               />
             </div>
+          </div>
+
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-muted/30 p-3">
+            <div>
+              <p className="text-sm font-medium">
+                <Bell className="inline size-4 mr-1" />Avisar no dia do vencimento
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Envia aviso também no dia em que a conta vence.
+              </p>
+            </div>
+            <Switch
+              checked={form.notify_on_due_date}
+              onCheckedChange={(v) => setForm((f) => ({ ...f, notify_on_due_date: v }))}
+              aria-label="Avisar no dia do vencimento"
+            />
           </div>
 
           <div className="space-y-2 rounded-xl border border-border/70 p-3">
