@@ -11,7 +11,7 @@ export function getDueBuckets(entries: Entry[] | undefined): DueBuckets {
   const today = todayISO();
   const buckets: DueBuckets = { vencidas: [], hoje: [], proximos: [] };
   for (const entry of entries ?? []) {
-    if (entry.status === "pago" || entry.kind !== "despesa") continue;
+    if (entry.status === "pago" || entry.kind !== "despesa" || entry.is_avulsa) continue;
     const delta = diffDays(today, entry.due_date);
     if (delta < 0) buckets.vencidas.push(entry);
     else if (delta === 0) buckets.hoje.push(entry);
