@@ -122,6 +122,7 @@ export async function montarResumo(perfil: AvisoPerfil): Promise<AvisoResumo> {
     .eq("user_id", perfil.id)
     .eq("kind", "despesa")
     .eq("status", "pendente")
+    .eq("is_avulsa", false)
     .lte("due_date", limiteContas)
     .order("due_date", { ascending: true });
   if (erroContas) throw erroContas;
