@@ -97,22 +97,40 @@ function Diarias() {
 
   // Histórico: todos os meses já registrados (inclusive o atual), com detalhe por gasto.
   const historico = useMemo(() => {
-    const meses = new Map<string, { total: number; itens: { nome: string; valor: number }[] }>();
+    const meses = new Map<string, Map<string, typeof entries>>();
     for (const e of entries ?? []) {
       if (!e.is_avulsa) continue;
       const mes = e.month_ref ?? e.due_date.slice(0, 7);
-      const atual = meses.get(mes) ?? { total: 0, itens: [] };
-      atual.total += Number(e.amount);
-      atual.itens.push({ nome: e.description, valor: Number(e.amount) });
-      meses.set(mes, atual);
+      if (!meses.has(mes)) meses.set(mes, new Map());
+      const mesMap = meses.get(mes)!;
+      const key = e.description;
+      if (!mesMap.has(key)) mesMap.set(key, []);
+      mesMap.get(key)!.push(e);
     }
     return [...meses.entries()]
       .sort((a, b) => b[0].localeCompare(a[0]))
-      .map(([mes, dados]) => ({
-        mes,
-        total: dados.total,
-        itens: dados.itens.sort((a, b) => b.valor - a.valor),
-      }));
+      .map(([mes, descMap]) => {
+        const itens: { desc: string; amount: number; date: string; paidAt: string | null; status: string }[] = [];
+        let total = 0;
+        descMap.forEach((ents, desc) => {
+          ents.forEach((e) => {
+            const amount = Number(e.amount);
+            total += amount;
+            itens.push({
+              desc,
+              amount,
+              date: e.due_date,
+              paidAt: e.paid_at,
+              status: e.status,
+            });
+          });
+        });
+        return {
+          mes,
+          total,
+          itens: itens.sort((a, b) => a.date.localeCompare(b.date)),
+        };
+      });
   }, [entries]);
 
   const [mesAberto, setMesAberto] = useState<string | null>(null);
@@ -308,15 +326,38 @@ function Diarias() {
                     className="flex w-full items-center justify-between gap-3 text-left"
                     onClick={() => setMesAberto(aberto && h.mes !== ref ? null : h.mes)}
                   >
-                    <span className="font-medium">{rotulo}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{rotulo}</span>
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
+                        {h.itens.length} lançamento{h.itens.length !== 1 ? "s" : ""}
+                      </span>
+                    </div>
                     <span className="font-semibold">{formatBRL(h.total)}</span>
                   </button>
                   {aberto && (
                     <ul className="mt-2 space-y-1 pl-1 text-sm text-muted-foreground print:text-black">
                       {h.itens.map((i, idx) => (
-                        <li key={`${h.mes}-${idx}`} className="flex justify-between gap-3">
-                          <span>{i.nome}</span>
-                          <span>{formatBRL(i.valor)}</span>
+                        <li
+                          key={`${h.mes}-${idx}`}
+                          className={`flex flex-wrap items-center justify-between gap-2 rounded-lg px-2 py-1.5 ${i.status === "pago" ? "bg-green-50 dark:bg-green-950/30" : "bg-yellow-50 dark:bg-yellow-950/30"}`}
+                        >
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
+                            <span className={i.status === "pago" ? "text-green-700 dark:text-green-400 font-medium" : "text-yellow-700 dark:text-yellow-400 font-medium"}>
+                              {i.status === "pago" ? "✓ Pago" : "○ Pendente"}
+                            </span>
+                            <span>{i.desc}</span>
+                            <span className="text-xs">
+                              {new Date(i.date + "T00:00:00").toLocaleDateString("pt-BR")}
+                            </span>
+                            {i.paidAt && (
+                              <span className="text-xs text-green-600 dark:text-green-400">
+                                em {new Date(i.paidAt + "T00:00:00").toLocaleDateString("pt-BR")}
+                              </span>
+                            )}
+                          </div>
+                          <span className={`font-semibold ${i.status === "pago" ? "text-green-700 dark:text-green-400" : "text-yellow-700 dark:text-yellow-400"}`}>
+                            {formatBRL(i.amount)}
+                          </span>
                         </li>
                       ))}
                     </ul>

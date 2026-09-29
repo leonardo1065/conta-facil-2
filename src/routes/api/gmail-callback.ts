@@ -1,3 +1,4 @@
+import { createFileRoute } from '@tanstack/react-router'
 import { createFileRoute } from "@tanstack/react-start/server";
 
 // Delega para a Edge Function — o redirect real vem de lá

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-start";
 import { useEffect } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, createFileRoute } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { CheckCircle2, XCircle } from "lucide-react";
 

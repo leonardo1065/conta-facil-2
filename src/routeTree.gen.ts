@@ -10,9 +10,11 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as GmailCbRouteImport } from './routes/gmail-cb'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiGmailCallbackRouteImport } from './routes/api/gmail-callback'
 import { Route as AuthenticatedSaudeRouteImport } from './routes/_authenticated/saude'
 import { Route as AuthenticatedRecorrenteRouteImport } from './routes/_authenticated/recorrente'
 import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated/painel'
@@ -29,6 +31,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GmailCbRoute = GmailCbRouteImport.update({
+  id: '/gmail-cb',
+  path: '/gmail-cb',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -41,6 +48,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGmailCallbackRoute = ApiGmailCallbackRouteImport.update({
+  id: '/api/gmail-callback',
+  path: '/api/gmail-callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedSaudeRoute = AuthenticatedSaudeRouteImport.update({
@@ -99,6 +111,7 @@ const ApiPublicHooksAvisosRoute = ApiPublicHooksAvisosRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/gmail-cb': typeof GmailCbRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/avisos': typeof AuthenticatedAvisosRoute
   '/calendario': typeof AuthenticatedCalendarioRoute
@@ -109,11 +122,13 @@ export interface FileRoutesByFullPath {
   '/painel': typeof AuthenticatedPainelRoute
   '/recorrente': typeof AuthenticatedRecorrenteRoute
   '/saude': typeof AuthenticatedSaudeRoute
+  '/api/gmail-callback': typeof ApiGmailCallbackRoute
   '/api/public/hooks/avisos': typeof ApiPublicHooksAvisosRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/gmail-cb': typeof GmailCbRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/avisos': typeof AuthenticatedAvisosRoute
   '/calendario': typeof AuthenticatedCalendarioRoute
@@ -124,6 +139,7 @@ export interface FileRoutesByTo {
   '/painel': typeof AuthenticatedPainelRoute
   '/recorrente': typeof AuthenticatedRecorrenteRoute
   '/saude': typeof AuthenticatedSaudeRoute
+  '/api/gmail-callback': typeof ApiGmailCallbackRoute
   '/api/public/hooks/avisos': typeof ApiPublicHooksAvisosRoute
 }
 export interface FileRoutesById {
@@ -131,6 +147,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/gmail-cb': typeof GmailCbRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/avisos': typeof AuthenticatedAvisosRoute
   '/_authenticated/calendario': typeof AuthenticatedCalendarioRoute
@@ -141,6 +158,7 @@ export interface FileRoutesById {
   '/_authenticated/painel': typeof AuthenticatedPainelRoute
   '/_authenticated/recorrente': typeof AuthenticatedRecorrenteRoute
   '/_authenticated/saude': typeof AuthenticatedSaudeRoute
+  '/api/gmail-callback': typeof ApiGmailCallbackRoute
   '/api/public/hooks/avisos': typeof ApiPublicHooksAvisosRoute
 }
 export interface FileRouteTypes {
@@ -148,6 +166,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/gmail-cb'
     | '/sitemap.xml'
     | '/avisos'
     | '/calendario'
@@ -158,11 +177,13 @@ export interface FileRouteTypes {
     | '/painel'
     | '/recorrente'
     | '/saude'
+    | '/api/gmail-callback'
     | '/api/public/hooks/avisos'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
+    | '/gmail-cb'
     | '/sitemap.xml'
     | '/avisos'
     | '/calendario'
@@ -173,12 +194,14 @@ export interface FileRouteTypes {
     | '/painel'
     | '/recorrente'
     | '/saude'
+    | '/api/gmail-callback'
     | '/api/public/hooks/avisos'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/gmail-cb'
     | '/sitemap.xml'
     | '/_authenticated/avisos'
     | '/_authenticated/calendario'
@@ -189,6 +212,7 @@ export interface FileRouteTypes {
     | '/_authenticated/painel'
     | '/_authenticated/recorrente'
     | '/_authenticated/saude'
+    | '/api/gmail-callback'
     | '/api/public/hooks/avisos'
   fileRoutesById: FileRoutesById
 }
@@ -196,7 +220,9 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  GmailCbRoute: typeof GmailCbRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  ApiGmailCallbackRoute: typeof ApiGmailCallbackRoute
   ApiPublicHooksAvisosRoute: typeof ApiPublicHooksAvisosRoute
 }
 
@@ -207,6 +233,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gmail-cb': {
+      id: '/gmail-cb'
+      path: '/gmail-cb'
+      fullPath: '/gmail-cb'
+      preLoaderRoute: typeof GmailCbRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -228,6 +261,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/gmail-callback': {
+      id: '/api/gmail-callback'
+      path: '/api/gmail-callback'
+      fullPath: '/api/gmail-callback'
+      preLoaderRoute: typeof ApiGmailCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/saude': {
@@ -334,7 +374,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  GmailCbRoute: GmailCbRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  ApiGmailCallbackRoute: ApiGmailCallbackRoute,
   ApiPublicHooksAvisosRoute: ApiPublicHooksAvisosRoute,
 }
 export const routeTree = rootRouteImport
