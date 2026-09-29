@@ -838,10 +838,10 @@ type TransporteEmail = {
 
 /** Cria o transporte SMTP do Gmail com as credenciais informadas. */
 async function criarTransporte(cfg: SmtpConfig): Promise<TransporteEmail> {
-  // nodemailer v9 ESM: createTransport é exportado diretamente no módulo
-  const { default: nodemailer } = await import("nodemailer") as { default: { createTransport: (opcoes: OpcoesTransporte) => TransporteEmail } };
-  if (!nodemailer?.createTransport) throw new Error("Não foi possível carregar o componente de envio de e-mail.");
-  return nodemailer.createTransport({
+  // nodemailer v9 ESM: exports named, não default
+  const { createTransport } = await import("nodemailer");
+  if (!createTransport) throw new Error("Não foi possível carregar o componente de envio de e-mail.");
+  return createTransport({
     host: cfg.host,
     port: cfg.port,
     secure: cfg.secure,
