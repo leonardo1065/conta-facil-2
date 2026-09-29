@@ -727,10 +727,47 @@ export function SettingsDialog({
               </Button>
               )}
 
-              {form.smtp_mode === "oauth" && !verificandoGmail && gmail && !gmail.conectado && (
+              {form.smtp_mode === "oauth" && !gmail?.conectado && (
                 <Button
                   type="button"
-                  variant="destructive"
+                  variant="default"
+                  size="sm"
+                  className="gap-2"
+                  onClick={async () => {
+                    // Puxa o link de autorização da Edge Function
+                    let link: string | null = null;
+                    try {
+                      const res = await fetch("/functions/v1/gmail-oauth", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                      });
+                      const data = await res.json();
+                      link = data.url;
+                    } catch {
+                      // Fallback: abre diretamente
+                      const params = new URLSearchParams({
+                        client_id:     "YOUR_GOOGLE_CLIENT_ID",
+                        redirect_uri:  `${window.location.origin}/api/gmail-callback`,
+                        response_type: "code",
+                        scope:         "https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/userinfo.email",
+                        access_type:   "offline",
+                        prompt:        "consent",
+                      });
+                      link = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
+                    }
+                    if (link) window.location.href = link;
+                    else toast.error("Não foi possível gerar o link de autorização");
+                  }}
+                >
+                  <Mail className="size-4" />
+                  Conectar com Google
+                </Button>
+              )}
+
+              {form.smtp_mode === "oauth" && gmail?.conectado && (
+                <Button
+                  type="button"
+                  variant="outline"
                   size="sm"
                   className="gap-2"
                   onClick={async () => {
@@ -748,7 +785,7 @@ export function SettingsDialog({
                   }}
                 >
                   <RefreshCw className="size-4" />
-                  Reconectar Gmail
+                  Verificar conexão
                 </Button>
               )}
 
