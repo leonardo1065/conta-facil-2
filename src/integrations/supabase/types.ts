@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.15"
   }
   public: {
     Tables: {
@@ -60,6 +60,7 @@ export type Database = {
           barcode: string | null
           category_id: string | null
           created_at: string
+          daily_archived: boolean
           description: string
           due_date: string
           id: string
@@ -70,6 +71,7 @@ export type Database = {
           kind: Database["public"]["Enums"]["entry_kind"]
           month_ref: string | null
           notes: string | null
+          observations: string | null
           paid_at: string | null
           recurrence_interval_months: number
           recurrence_unit: string
@@ -84,6 +86,7 @@ export type Database = {
           barcode?: string | null
           category_id?: string | null
           created_at?: string
+          daily_archived?: boolean
           description: string
           due_date: string
           id?: string
@@ -94,6 +97,7 @@ export type Database = {
           kind?: Database["public"]["Enums"]["entry_kind"]
           month_ref?: string | null
           notes?: string | null
+          observations?: string | null
           paid_at?: string | null
           recurrence_interval_months?: number
           recurrence_unit?: string
@@ -108,6 +112,7 @@ export type Database = {
           barcode?: string | null
           category_id?: string | null
           created_at?: string
+          daily_archived?: boolean
           description?: string
           due_date?: string
           id?: string
@@ -118,6 +123,7 @@ export type Database = {
           kind?: Database["public"]["Enums"]["entry_kind"]
           month_ref?: string | null
           notes?: string | null
+          observations?: string | null
           paid_at?: string | null
           recurrence_interval_months?: number
           recurrence_unit?: string
@@ -262,13 +268,18 @@ export type Database = {
           health_via_email: boolean
           health_via_whatsapp: boolean
           id: string
+          notify_browser: boolean
           notify_days_before: number
           notify_email: string | null
           notify_email_secondary: string | null
           notify_enabled: boolean
           notify_health: boolean
           notify_hour: number
+          notify_on_due_date: boolean
           notify_whatsapp: boolean
+          oauth_access_token: string | null
+          oauth_refresh_token: string | null
+          oauth_token_expiry: number | null
           smtp_config: Json | null
           updated_at: string
           whatsapp: string | null
@@ -284,13 +295,18 @@ export type Database = {
           health_via_email?: boolean
           health_via_whatsapp?: boolean
           id: string
+          notify_browser?: boolean
           notify_days_before?: number
           notify_email?: string | null
           notify_email_secondary?: string | null
           notify_enabled?: boolean
           notify_health?: boolean
           notify_hour?: number
+          notify_on_due_date?: boolean
           notify_whatsapp?: boolean
+          oauth_access_token?: string | null
+          oauth_refresh_token?: string | null
+          oauth_token_expiry?: number | null
           smtp_config?: Json | null
           updated_at?: string
           whatsapp?: string | null
@@ -306,13 +322,18 @@ export type Database = {
           health_via_email?: boolean
           health_via_whatsapp?: boolean
           id?: string
+          notify_browser?: boolean
           notify_days_before?: number
           notify_email?: string | null
           notify_email_secondary?: string | null
           notify_enabled?: boolean
           notify_health?: boolean
           notify_hour?: number
+          notify_on_due_date?: boolean
           notify_whatsapp?: boolean
+          oauth_access_token?: string | null
+          oauth_refresh_token?: string | null
+          oauth_token_expiry?: number | null
           smtp_config?: Json | null
           updated_at?: string
           whatsapp?: string | null

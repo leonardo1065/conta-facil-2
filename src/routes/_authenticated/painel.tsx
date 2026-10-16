@@ -32,6 +32,8 @@ export const Route = createFileRoute("/_authenticated/painel")({
       { title: "Painel — Agenda de Contas" },
       { name: "description", content: "Vencimentos em destaque, totais do mês e gastos por categoria." },
       { property: "og:title", content: "Painel — Agenda de Contas" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { property: "og:description", content: "Vencimentos em destaque, totais do mês e gastos por categoria." },
     ],
   }),
@@ -121,10 +123,6 @@ function Painel() {
           <p className="text-sm text-muted-foreground">{formatMonth(new Date(anoHoje, mesHoje - 1, 1))}</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <NowCard />
-          <Button variant="outline" className="gap-2" onClick={() => setConfig(true)}>
-            <Settings className="size-4" /> Configurações
-          </Button>
           <Button
             className="gap-2"
             onClick={() => {
@@ -137,7 +135,6 @@ function Painel() {
         </div>
       </div>
 
-      <DueAlertBanner buckets={buckets} />
 
       <section className="grid gap-3 sm:grid-cols-3">
 

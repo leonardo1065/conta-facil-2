@@ -33,7 +33,7 @@ import {
 } from "@/lib/dates";
 import {
   useAddToAvulsa,
-  useDeleteEntry,
+  useArchiveDaily,
   useEntries,
   useSaveEntry,
   type Entry,
@@ -67,7 +67,7 @@ function Diarias() {
   const { data: entries, isLoading } = useEntries();
   const salvar = useSaveEntry();
   const somar = useAddToAvulsa();
-  const excluir = useDeleteEntry();
+  const excluir = useArchiveDaily();
   const [aExcluir, setAExcluir] = useState<Entry | null>(null);
   const [novo, setNovo] = useState(false);
   const [nome, setNome] = useState("");
@@ -77,7 +77,7 @@ function Diarias() {
 
   // Uma linha por série: a do mês corrente quando existir.
   const contas = useMemo(() => {
-    const avulsas = (entries ?? []).filter((e) => e.is_avulsa);
+    const avulsas = (entries ?? []).filter((e) => e.is_avulsa && !e.daily_archived);
     const porSerie = new Map<string, Entry>();
     for (const e of avulsas) {
       const key = e.series_id ?? e.id;
@@ -97,15 +97,16 @@ function Diarias() {
 
   // Histórico: todos os meses já registrados (inclusive o atual), com detalhe por gasto.
   const historico = useMemo(() => {
-    const meses = new Map<string, Map<string, typeof entries>>();
+    const meses = new Map<string, Map<string, Entry[]>>();
     for (const e of entries ?? []) {
       if (!e.is_avulsa) continue;
       const mes = e.month_ref ?? e.due_date.slice(0, 7);
       if (!meses.has(mes)) meses.set(mes, new Map());
-      const mesMap = meses.get(mes)!;
+      const mesMap = meses.get(mes);
+      if (!mesMap) continue;
       const key = e.description;
       if (!mesMap.has(key)) mesMap.set(key, []);
-      mesMap.get(key)!.push(e);
+      mesMap.get(key)?.push(e);
     }
     return [...meses.entries()]
       .sort((a, b) => b[0].localeCompare(a[0]))
@@ -190,10 +191,10 @@ function Diarias() {
   async function confirmarExclusao() {
     if (!aExcluir) return;
     const alvo = aExcluir;
-    setAExcluir(null);
     try {
-      await excluir.mutateAsync(alvo.id);
-      toast.success(`"${alvo.description}" excluída.`);
+      await excluir.mutateAsync(alvo);
+      setAExcluir(null);
+      toast.success(`Cadastro de "${alvo.description}" excluído. Histórico preservado.`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao excluir conta diária.");
     }
@@ -278,7 +279,7 @@ function Diarias() {
                       className="print:hidden"
                       aria-label={`Excluir ${c.description}`}
                       title="Excluir conta diária"
-                      disabled={excluir.isPending}
+                      disabled={excluir.isPending || somar.isPending}
                       onClick={() => setAExcluir(c)}
                     >
                       <Trash2 className="size-4 text-destructive" />
@@ -291,13 +292,13 @@ function Diarias() {
                       key={v}
                       size="sm"
                       variant="secondary"
-                      disabled={somar.isPending}
+                      disabled={somar.isPending || excluir.isPending}
                       onClick={() => void somarRapido(c, v)}
                     >
                       +{v}
                     </Button>
                   ))}
-                  <Button size="sm" variant="outline" onClick={() => setEmSoma(c)}>
+                  <Button size="sm" variant="outline" disabled={excluir.isPending} onClick={() => setEmSoma(c)}>
                     Outro valor
                   </Button>
                 </div>
@@ -407,22 +408,23 @@ function Diarias() {
 
       <AvulsaAddDialog entry={emSoma} onClose={() => setEmSoma(null)} />
 
-      <AlertDialog open={!!aExcluir} onOpenChange={(o) => !o && setAExcluir(null)}>
+      <AlertDialog open={!!aExcluir} onOpenChange={(o) => !o && !excluir.isPending && setAExcluir(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir conta diária?</AlertDialogTitle>
+            <AlertDialogTitle>Excluir cadastro da diária?</AlertDialogTitle>
             <AlertDialogDescription>
-              “{aExcluir?.description}” será removida definitivamente, junto com os valores
-              lançados neste registro.
+              “{aExcluir?.description}” será retirada da lista de diárias. Todos os valores
+              já lançados continuarão guardados no histórico mensal.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={excluir.isPending}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => void confirmarExclusao()}
+              disabled={excluir.isPending}
+              onClick={(event) => { event.preventDefault(); void confirmarExclusao(); }}
             >
-              {excluir.isPending ? "Excluindo..." : "Excluir"}
+              {excluir.isPending ? "Excluindo..." : "Excluir cadastro"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

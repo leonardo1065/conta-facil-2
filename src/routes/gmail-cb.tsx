@@ -1,4 +1,3 @@
-import { createFileRoute } from "@tanstack/react-start";
 import { useEffect } from "react";
 import { useNavigate, createFileRoute } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -27,5 +26,13 @@ function GmailCallbackPage() {
 }
 
 export const Route = createFileRoute("/gmail-cb")({
+  head: () => ({ meta: [
+    { title: "Conexão Gmail — Agenda de Contas" },
+    { name: "description", content: "Confirmação da conexão do Gmail para avisos da Agenda de Contas." },
+    { property: "og:title", content: "Conexão Gmail — Agenda de Contas" },
+    { property: "og:description", content: "Confirmação da conexão do Gmail para avisos da Agenda de Contas." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: GmailCallbackPage,
 });

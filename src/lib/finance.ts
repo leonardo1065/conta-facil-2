@@ -37,6 +37,7 @@ export type Entry = {
   installment_no: number | null;
   installment_total: number | null;
   is_avulsa: boolean;
+  daily_archived: boolean;
   month_ref: string | null;
 };
 
@@ -121,6 +122,7 @@ export type EntryInput = Omit<
   | "installment_no"
   | "installment_total"
   | "is_avulsa"
+  | "daily_archived"
   | "month_ref"
 > & { recurrence?: Recurrence };
 
@@ -262,6 +264,26 @@ export function useAddToAvulsa() {
       });
       if (error) throw error;
       return { novoMes: true };
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["entries"] }),
+  });
+}
+
+export function useArchiveDaily() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (entry: Entry) => {
+      const userId = await currentUserId();
+      let query = supabase.from("entries")
+        .update({ daily_archived: true })
+        .eq("user_id", userId)
+        .eq("is_avulsa", true);
+      query = entry.series_id
+        ? query.eq("series_id", entry.series_id)
+        : query.eq("id", entry.id);
+      const { data, error } = await query.select("id");
+      if (error) throw error;
+      if (!data?.length) throw new Error("Não foi possível localizar esta diária.");
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["entries"] }),
   });

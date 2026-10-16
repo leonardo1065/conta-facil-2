@@ -30,7 +30,7 @@ export const testarWhatsapp = createServerFn({ method: "POST" })
     const zapi = verificarZapi();
     if (!zapi.pronto) return { enviado: false, status: "sem_zapi", detalhe: zapi.mensagem };
 
-    const perfil = await carregarPerfil(context.userId);
+    const perfil = await carregarPerfil(context.userId, context.supabase);
     if (!perfil) throw new Error("Perfil não encontrado");
     const bruto = (data.numero ?? "").trim() || perfil.whatsapp || "";
     const fone = normalizarWhatsapp(bruto);
@@ -52,12 +52,12 @@ export const enviarAvisoTeste = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { carregarPerfil, enviarResumo } = await import("@/lib/avisos.server");
-    const perfil = await carregarPerfil(context.userId);
+    const perfil = await carregarPerfil(context.userId, context.supabase);
     if (!perfil) throw new Error("Perfil não encontrado");
     if (!perfil.notify_email && !(perfil.notify_whatsapp && perfil.whatsapp))
       throw new Error("Cadastre um e-mail ou ative o WhatsApp antes de testar");
 
-    const r = await enviarResumo(perfil, { tipo: "teste", ignorarVazio: true });
+    const r = await enviarResumo(perfil, { tipo: "teste", ignorarVazio: true }, context.supabase);
     return {
       enviado: r.enviado,
       status: r.status,
@@ -73,9 +73,9 @@ export const previaAviso = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { carregarPerfil, montarResumo } = await import("@/lib/avisos.server");
-    const perfil = await carregarPerfil(context.userId);
+    const perfil = await carregarPerfil(context.userId, context.supabase);
     if (!perfil) throw new Error("Perfil não encontrado");
-    const resumo = await montarResumo(perfil);
+    const resumo = await montarResumo(perfil, context.supabase);
     return { assunto: resumo.assunto, texto: resumo.texto, vazio: resumo.vazio };
   });
 
@@ -142,7 +142,7 @@ export const statusGmail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { carregarPerfil, verificarGmail } = await import("@/lib/avisos.server");
-    const perfil = await carregarPerfil(context.userId);
+    const perfil = await carregarPerfil(context.userId, context.supabase);
     return verificarGmail(perfil?.smtp_config ?? null);
   });
 
@@ -155,7 +155,7 @@ export const testarConexaoGmail = createServerFn({ method: "POST" })
   .inputValidator((input: { user?: string; pass?: string } | undefined) => input ?? {})
   .handler(async ({ data, context }) => {
     const { carregarPerfil, testarConexaoSmtp } = await import("@/lib/avisos.server");
-    const perfil = await carregarPerfil(context.userId);
+    const perfil = await carregarPerfil(context.userId, context.supabase);
     const salvo = perfil?.smtp_config ?? null;
     const user = data.user?.trim() || salvo?.user?.trim() || "";
     const pass = data.pass?.replace(/\s+/g, "") || salvo?.pass || "";

@@ -1,12 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { createFileRoute } from "@tanstack/react-start/server";
 
 // Delega para a Edge Function — o redirect real vem de lá
 const HANDLER = async ({ request }: { request: Request }) => {
   const url = request.url;
+  const backendUrl = process.env['SUPABASE_URL'];
+  if (!backendUrl) return new Response("Conexão Gmail indisponível", { status: 503 });
   // Chama a Edge Function que processa o callback
   const res = await fetch(
-    `${Deno.env.get("SUPABASE_URL")!}/functions/v1/gmail-callback` + (url.includes("?") ? url.substring(url.indexOf("?")) : ""),
+    `${backendUrl}/functions/v1/gmail-callback` + (url.includes("?") ? url.substring(url.indexOf("?")) : ""),
     {
       method:  "GET",
       headers: {
@@ -14,10 +15,10 @@ const HANDLER = async ({ request }: { request: Request }) => {
       },
     },
   );
-  const redirect = res.headers.get("location") ?? `${Deno.env.get("APP_URL")}/#/painel`;
+  const redirect = res.headers.get("location") ?? new URL("/painel", request.url).href;
   return Response.redirect(redirect, 302);
 };
 
 export const Route = createFileRoute("/api/gmail-callback")({
-  GET: HANDLER,
+  server: { handlers: { GET: HANDLER } },
 });

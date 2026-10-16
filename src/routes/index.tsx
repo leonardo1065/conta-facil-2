@@ -12,6 +12,8 @@ export const Route = createFileRoute("/")({
           "Organize contas a pagar e receber em reais: alertas de vencimento, calendário mensal, recorrência e leitura de boleto e Pix.",
       },
       { property: "og:title", content: "Agenda de Contas — Financeiro Doméstico" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       {
         property: "og:description",
         content:
@@ -60,9 +62,6 @@ function Home() {
           <h1 className="mx-auto mt-3 max-w-2xl text-4xl leading-tight font-bold sm:text-5xl">
             Agenda de Contas
           </h1>
-          <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-            desisto eu nao vou comprar um doninio
-          </p>
           <div className="mt-8">
             <Button asChild size="lg">
               <Link to="/auth">Começar agora</Link>
@@ -70,15 +69,6 @@ function Home() {
           </div>
         </section>
 
-        <section className="grid gap-4 sm:grid-cols-3">
-          {recursos.map((r) => (
-            <article key={r.titulo} className="card-elevated p-5">
-              <r.icon className="size-6 text-primary" />
-              <h2 className="mt-3 text-lg font-semibold">{r.titulo}</h2>
-              <p className="mt-1 text-sm text-muted-foreground">{r.texto}</p>
-            </article>
-          ))}
-        </section>
       </main>
     </div>
   );
