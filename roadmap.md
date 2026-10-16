@@ -9,3 +9,4 @@
 - [x] Corrigir a interpretação de códigos digitados com formatação, quebras ou caracteres confundidos
 - [x] Permitir um segundo e-mail destinatário para todos os avisos
 - [ ] Excluir somente o cadastro da diária selecionada, preservando o histórico mensal
+- [ ] Organizar os botões de navegação na lateral e despoluir a página inicial, sem alterar dados cadastrados
