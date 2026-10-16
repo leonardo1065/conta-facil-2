@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.15"
   }
   public: {
     Tables: {
@@ -70,6 +70,7 @@ export type Database = {
           kind: Database["public"]["Enums"]["entry_kind"]
           month_ref: string | null
           notes: string | null
+          observations: string | null
           paid_at: string | null
           recurrence_interval_months: number
           recurrence_unit: string
@@ -94,6 +95,7 @@ export type Database = {
           kind?: Database["public"]["Enums"]["entry_kind"]
           month_ref?: string | null
           notes?: string | null
+          observations?: string | null
           paid_at?: string | null
           recurrence_interval_months?: number
           recurrence_unit?: string
@@ -118,6 +120,7 @@ export type Database = {
           kind?: Database["public"]["Enums"]["entry_kind"]
           month_ref?: string | null
           notes?: string | null
+          observations?: string | null
           paid_at?: string | null
           recurrence_interval_months?: number
           recurrence_unit?: string
@@ -269,6 +272,9 @@ export type Database = {
           notify_health: boolean
           notify_hour: number
           notify_whatsapp: boolean
+          oauth_access_token: string | null
+          oauth_refresh_token: string | null
+          oauth_token_expiry: number | null
           smtp_config: Json | null
           updated_at: string
           whatsapp: string | null
@@ -291,6 +297,9 @@ export type Database = {
           notify_health?: boolean
           notify_hour?: number
           notify_whatsapp?: boolean
+          oauth_access_token?: string | null
+          oauth_refresh_token?: string | null
+          oauth_token_expiry?: number | null
           smtp_config?: Json | null
           updated_at?: string
           whatsapp?: string | null
@@ -313,6 +322,9 @@ export type Database = {
           notify_health?: boolean
           notify_hour?: number
           notify_whatsapp?: boolean
+          oauth_access_token?: string | null
+          oauth_refresh_token?: string | null
+          oauth_token_expiry?: number | null
           smtp_config?: Json | null
           updated_at?: string
           whatsapp?: string | null
