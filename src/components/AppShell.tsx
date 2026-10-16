@@ -3,6 +3,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
   Bell,
+  PanelLeftClose,
+  PanelLeftOpen,
   CalendarDays,
   HeartPulse,
   Inbox,
@@ -50,6 +52,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { data: entries } = useEntries();
   const { permission, pedirPermissao } = useDueNotifications(entries);
   const [config, setConfig] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
 
   const buckets = getDueBuckets(entries);
@@ -64,75 +67,38 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-30 border-b border-border/70 bg-background/85 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
-          <Link to="/painel" className="flex items-center gap-2">
-            <span className="flex size-9 items-center justify-center rounded-xl bg-brand text-primary-foreground shadow-soft">
-              <Wallet className="size-5" />
-            </span>
-            <span className="hidden text-base font-semibold sm:block">Agenda de Contas</span>
-          </Link>
-
-          <div className="ml-auto flex items-center gap-1">
-            {permission === "default" && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={pedirPermissao}
-                className="gap-2"
-                aria-label="Ativar avisos de vencimento"
-              >
-                <Bell className="size-4" />
-                <span className="hidden sm:inline">Ativar avisos</span>
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setConfig(true)}
-              aria-label="Configurações de avisos"
-            >
-              <Settings className="size-4" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={toggle} aria-label="Alternar tema">
-              {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
-            </Button>
-
-            <Button variant="ghost" size="sm" onClick={sair} className="gap-2">
-              <LogOut className="size-4" />
-              <span className="hidden sm:inline">Sair</span>
-            </Button>
-          </div>
-        </div>
-
-        <nav className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-3 pb-2">
+      <aside className={cn("fixed inset-y-0 left-0 z-30 flex flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground print:hidden", collapsed ? "w-16" : "w-16 md:w-60")}>
+        <Button asChild variant="ghost" className="h-16 justify-start gap-3 rounded-none px-5" title="Agenda de Contas">
+          <Link to="/painel"><Wallet className="size-6 shrink-0 text-primary" />{!collapsed && <span className="hidden md:inline">Agenda de Contas</span>}</Link>
+        </Button>
+        <nav aria-label="Navegação principal" className="flex-1 space-y-1 overflow-y-auto px-2 py-3">
           {nav.map((item) => {
             const active = pathname.startsWith(item.to);
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={cn(
-                  "relative flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium whitespace-nowrap transition-colors",
-                  active
-                    ? "bg-secondary text-secondary-foreground"
-                    : "text-muted-foreground hover:bg-muted",
-                )}
-              >
-                <item.icon className="size-4" />
-                {item.label}
-                {item.to === "/painel" && alertCount > 0 && (
-                  <span className="ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[11px] font-bold text-destructive-foreground">
-                    {alertCount}
-                  </span>
-                )}
+            return <Button key={item.to} asChild variant="ghost" className={cn("h-11 w-full justify-start gap-3 px-3", active && "bg-sidebar-accent text-sidebar-accent-foreground")} title={item.label}>
+              <Link to={item.to} aria-label={item.label} aria-current={active ? "page" : undefined}>
+                <item.icon className="size-5 shrink-0" />
+                {!collapsed && <span className="hidden md:inline">{item.label}</span>}
+                {item.to === "/painel" && alertCount > 0 && !collapsed && <span className="ml-auto hidden rounded-full bg-destructive px-1.5 text-xs text-destructive-foreground md:inline">{alertCount}</span>}
               </Link>
-            );
+            </Button>;
           })}
         </nav>
-      </header>
-
-      <main className="mx-auto w-full max-w-6xl px-4 py-6 pb-20">{children}</main>
+        <div className="space-y-1 border-t border-sidebar-border p-2">
+          {permission === "default" && <Button variant="ghost" className="h-10 w-full justify-start gap-3 px-3" onClick={pedirPermissao} aria-label="Ativar avisos de vencimento" title="Ativar avisos"><Bell className="size-5 shrink-0" />{!collapsed && <span className="hidden md:inline">Ativar avisos</span>}</Button>}
+          <Button variant="ghost" className="h-10 w-full justify-start gap-3 px-3" onClick={() => setConfig(true)} aria-label="Configurações de avisos" title="Configurações"><Settings className="size-5 shrink-0" />{!collapsed && <span className="hidden md:inline">Configurações</span>}</Button>
+          <Button variant="ghost" className="h-10 w-full justify-start gap-3 px-3" onClick={toggle} aria-label="Alternar tema" title="Alternar tema">{theme === "dark" ? <Sun className="size-5 shrink-0" /> : <Moon className="size-5 shrink-0" />}{!collapsed && <span className="hidden md:inline">Alternar tema</span>}</Button>
+          <Button variant="ghost" className="h-10 w-full justify-start gap-3 px-3" onClick={sair} aria-label="Sair" title="Sair"><LogOut className="size-5 shrink-0" />{!collapsed && <span className="hidden md:inline">Sair</span>}</Button>
+        </div>
+      </aside>
+      <div className={cn("ml-16 min-w-0 print:ml-0", !collapsed && "md:ml-60")}>
+        <header className="flex h-16 items-center gap-3 border-b border-border px-4 print:hidden">
+          <Button variant="ghost" size="icon" className="hidden md:inline-flex" onClick={() => setCollapsed(!collapsed)} aria-label={collapsed ? "Expandir menu lateral" : "Recolher menu lateral"} title={collapsed ? "Expandir menu" : "Recolher menu"}>
+            {collapsed ? <PanelLeftOpen className="size-5" /> : <PanelLeftClose className="size-5" />}
+          </Button>
+          <span className="text-sm font-semibold">{nav.find(item => pathname.startsWith(item.to))?.label ?? "Agenda de Contas"}</span>
+        </header>
+        <main className="mx-auto w-full min-w-0 max-w-6xl px-4 py-6 pb-20">{children}</main>
+      </div>
 
       <SettingsDialog open={config} onOpenChange={setConfig} />
     </div>
