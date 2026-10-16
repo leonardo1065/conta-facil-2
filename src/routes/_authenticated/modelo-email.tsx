@@ -41,7 +41,7 @@ export const Route = createFileRoute("/_authenticated/modelo-email")({
   component: ModeloEmailPage,
   errorComponent: ({ error }) => (
     <div role="alert" className="rounded-2xl border border-destructive/40 bg-destructive/10 p-4 text-sm">
-      Não foi possível abrir o modelo: {error.message}
+      Não foi possível abrir o modelo: {error instanceof Error ? error.message : String(error)}
     </div>
   ),
 });

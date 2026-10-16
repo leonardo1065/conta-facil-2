@@ -40,7 +40,7 @@ export const Route = createFileRoute("/_authenticated/avisos")({
   component: AvisosPage,
   errorComponent: ({ error }) => (
     <div role="alert" className="rounded-2xl border border-destructive/40 bg-destructive/10 p-4 text-sm">
-      Não foi possível carregar os logs: {error.message}
+      Não foi possível carregar os logs: {error instanceof Error ? error.message : String(error)}
     </div>
   ),
   notFoundComponent: () => <div className="p-4 text-sm text-muted-foreground">Nada por aqui.</div>,
