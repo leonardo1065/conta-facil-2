@@ -57,8 +57,8 @@ export function horaSaoPaulo(): number {
   return Number(h);
 }
 
-export async function carregarPerfil(userId: string): Promise<AvisoPerfil | null> {
-  const { data, error } = await supabaseAdmin
+export async function carregarPerfil(userId: string, client: typeof supabaseAdmin = supabaseAdmin): Promise<AvisoPerfil | null> {
+  const { data, error } = await client
     .from("profiles")
     .select(PERFIL_COLS)
     .eq("id", userId)
@@ -112,11 +112,11 @@ type SaudeAviso = {
 };
 
 /** Monta o resumo do dia para um perfil: contas a vencer e compromissos de saúde. */
-export async function montarResumo(perfil: AvisoPerfil): Promise<AvisoResumo> {
+export async function montarResumo(perfil: AvisoPerfil, client: typeof supabaseAdmin = supabaseAdmin): Promise<AvisoResumo> {
   const hoje = todayISO();
   const limiteContas = addDays(hoje, Math.max(0, perfil.notify_days_before ?? 3));
 
-  const { data: contasRaw, error: erroContas } = await supabaseAdmin
+  const { data: contasRaw, error: erroContas } = await client
     .from("entries")
     .select("description, amount, due_date")
     .eq("user_id", perfil.id)
@@ -131,7 +131,7 @@ export async function montarResumo(perfil: AvisoPerfil): Promise<AvisoResumo> {
   let saude: SaudeAviso[] = [];
   if (perfil.notify_health) {
     const limiteSaude = addDays(hoje, Math.max(0, perfil.health_days_before ?? 1));
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await client
       .from("health_events")
       .select("title, kind, scheduled_date, scheduled_time, place_name")
       .eq("user_id", perfil.id)
@@ -1071,8 +1071,9 @@ const KIND_POR_TIPO: Record<TipoAviso, string> = {
 export async function enviarResumo(
   perfil: AvisoPerfil,
   opcoes: { tipo: TipoAviso; ignorarVazio?: boolean; resumo?: AvisoResumo } = { tipo: "diario" },
+  client: typeof supabaseAdmin = supabaseAdmin,
 ): Promise<ResultadoEnvio> {
-  const resumo = opcoes.resumo ?? (await montarResumo(perfil));
+  const resumo = opcoes.resumo ?? (await montarResumo(perfil, client));
   const hoje = todayISO();
   const kind = KIND_POR_TIPO[opcoes.tipo];
 
@@ -1081,7 +1082,7 @@ export async function enviarResumo(
   }
 
   const registrar = (channel: string, r: ResultadoCanal) =>
-    supabaseAdmin.from("notification_log").upsert(
+    client.from("notification_log").upsert(
       {
         user_id: perfil.id,
         kind,
