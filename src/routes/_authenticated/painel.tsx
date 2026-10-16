@@ -149,6 +149,15 @@ function Painel() {
           >
             <Plus className="size-4" /> Novo
           </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={oculto ? "Mostrar valores" : "Ocultar valores"}
+            title={oculto ? "Mostrar valores" : "Ocultar valores"}
+            onClick={alternarOculto}
+          >
+            {oculto ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+          </Button>
         </div>
       </div>
 
@@ -162,16 +171,16 @@ function Painel() {
               {bloco.titulo}
             </div>
             <p className="mt-2 text-2xl font-bold tabular-nums">{bloco.itens.length}</p>
-            <p className="text-sm font-medium opacity-90">{formatBRL(sum(bloco.itens))}</p>
+            <p className="text-sm font-medium opacity-90">{exibirValor(sum(bloco.itens))}</p>
           </div>
         ))}
       </section>
 
       <section className="grid gap-3 sm:grid-cols-4">
-        <Resumo titulo="A pagar" valor={sum(aPagar)} icon={TrendingDown} />
-        <Resumo titulo="Pago" valor={sum(pago)} icon={Wallet} />
-        <Resumo titulo="Receitas" valor={sum(receitas)} icon={TrendingUp} />
-        <Resumo titulo="Saldo" valor={saldo} icon={Wallet} destaque />
+        <Resumo titulo="A pagar" valor={sum(aPagar)} icon={TrendingDown} oculto={oculto} />
+        <Resumo titulo="Pago" valor={sum(pago)} icon={Wallet} oculto={oculto} />
+        <Resumo titulo="Receitas" valor={sum(receitas)} icon={TrendingUp} oculto={oculto} />
+        <Resumo titulo="Saldo" valor={saldo} icon={Wallet} oculto={oculto} destaque />
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
@@ -220,7 +229,7 @@ function Painel() {
                         <Cell key={c.name} fill={c.color} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(v: number) => formatBRL(v)} />
+                    <Tooltip formatter={(v: number) => exibirValor(v)} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -229,7 +238,7 @@ function Painel() {
                   <li key={c.name} className="flex items-center gap-2">
                     <span className="size-2.5 rounded-full" style={{ backgroundColor: c.color }} />
                     <span className="flex-1 truncate">{c.name}</span>
-                    <span className="tabular-nums text-muted-foreground">{formatBRL(c.value)}</span>
+                    <span className="tabular-nums text-muted-foreground">{exibirValor(c.value)}</span>
                   </li>
                 ))}
               </ul>
@@ -249,11 +258,13 @@ function Resumo({
   valor,
   icon: Icon,
   destaque,
+  oculto,
 }: {
   titulo: string;
   valor: number;
   icon: typeof Wallet;
   destaque?: boolean;
+  oculto?: boolean;
 }) {
   return (
     <div className={cn("card-elevated p-4", destaque && "bg-brand text-primary-foreground")}>
@@ -261,7 +272,7 @@ function Resumo({
         <Icon className="size-4" />
         {titulo}
       </div>
-      <p className="mt-1 text-xl font-bold tabular-nums">{formatBRL(valor)}</p>
+      <p className="mt-1 text-xl font-bold tabular-nums">{oculto ? "•••••" : formatBRL(valor)}</p>
     </div>
   );
 }
