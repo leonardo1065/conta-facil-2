@@ -118,10 +118,7 @@ function Painel() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Painel</h1>
-          <p className="text-sm text-muted-foreground">{formatMonth(new Date(anoHoje, mesHoje - 1, 1))}</p>
-        </div>
+        <p className="text-sm font-medium capitalize text-muted-foreground">{formatMonth(new Date(anoHoje, mesHoje - 1, 1))}</p>
         <div className="flex flex-wrap items-center gap-3">
           <Button
             className="gap-2"
