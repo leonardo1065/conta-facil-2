@@ -9,31 +9,30 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as GmailCbRouteImport } from './routes/gmail-cb'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ApiGmailCallbackRouteImport } from './routes/api/gmail-callback'
-import { Route as AuthenticatedSaudeRouteImport } from './routes/_authenticated/saude'
-import { Route as AuthenticatedRecorrenteRouteImport } from './routes/_authenticated/recorrente'
-import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated/painel'
-import { Route as AuthenticatedModeloEmailRouteImport } from './routes/_authenticated/modelo-email'
-import { Route as AuthenticatedLancamentosRouteImport } from './routes/_authenticated/lancamentos'
-import { Route as AuthenticatedDiariasRouteImport } from './routes/_authenticated/diarias'
-import { Route as AuthenticatedCategoriasRouteImport } from './routes/_authenticated/categorias'
-import { Route as AuthenticatedCalendarioRouteImport } from './routes/_authenticated/calendario'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as GmailCbRouteImport } from './routes/gmail-cb'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthenticatedAvisosRouteImport } from './routes/_authenticated/avisos'
+import { Route as AuthenticatedCalendarioRouteImport } from './routes/_authenticated/calendario'
+import { Route as AuthenticatedCategoriasRouteImport } from './routes/_authenticated/categorias'
+import { Route as AuthenticatedDiariasRouteImport } from './routes/_authenticated/diarias'
+import { Route as AuthenticatedLancamentosRouteImport } from './routes/_authenticated/lancamentos'
+import { Route as AuthenticatedModeloEmailRouteImport } from './routes/_authenticated/modelo-email'
+import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated/painel'
+import { Route as AuthenticatedRecorrenteRouteImport } from './routes/_authenticated/recorrente'
+import { Route as AuthenticatedSaudeRouteImport } from './routes/_authenticated/saude'
+import { Route as ApiGmailCallbackRouteImport } from './routes/api/gmail-callback'
 import { Route as ApiPublicHooksAvisosRouteImport } from './routes/api/public/hooks/avisos'
 
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const GmailCbRoute = GmailCbRouteImport.update({
-  id: '/gmail-cb',
-  path: '/gmail-cb',
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -41,55 +40,19 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
+const GmailCbRoute = GmailCbRouteImport.update({
+  id: '/gmail-cb',
+  path: '/gmail-cb',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiGmailCallbackRoute = ApiGmailCallbackRouteImport.update({
-  id: '/api/gmail-callback',
-  path: '/api/gmail-callback',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedSaudeRoute = AuthenticatedSaudeRouteImport.update({
-  id: '/saude',
-  path: '/saude',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedRecorrenteRoute = AuthenticatedRecorrenteRouteImport.update({
-  id: '/recorrente',
-  path: '/recorrente',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedPainelRoute = AuthenticatedPainelRouteImport.update({
-  id: '/painel',
-  path: '/painel',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedModeloEmailRoute =
-  AuthenticatedModeloEmailRouteImport.update({
-    id: '/modelo-email',
-    path: '/modelo-email',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedLancamentosRoute =
-  AuthenticatedLancamentosRouteImport.update({
-    id: '/lancamentos',
-    path: '/lancamentos',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedDiariasRoute = AuthenticatedDiariasRouteImport.update({
-  id: '/diarias',
-  path: '/diarias',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedCategoriasRoute = AuthenticatedCategoriasRouteImport.update({
-  id: '/categorias',
-  path: '/categorias',
+const AuthenticatedAvisosRoute = AuthenticatedAvisosRouteImport.update({
+  id: '/avisos',
+  path: '/avisos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedCalendarioRoute = AuthenticatedCalendarioRouteImport.update({
@@ -97,10 +60,47 @@ const AuthenticatedCalendarioRoute = AuthenticatedCalendarioRouteImport.update({
   path: '/calendario',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedAvisosRoute = AuthenticatedAvisosRouteImport.update({
-  id: '/avisos',
-  path: '/avisos',
+const AuthenticatedCategoriasRoute = AuthenticatedCategoriasRouteImport.update({
+  id: '/categorias',
+  path: '/categorias',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDiariasRoute = AuthenticatedDiariasRouteImport.update({
+  id: '/diarias',
+  path: '/diarias',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedLancamentosRoute =
+  AuthenticatedLancamentosRouteImport.update({
+    id: '/lancamentos',
+    path: '/lancamentos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedModeloEmailRoute =
+  AuthenticatedModeloEmailRouteImport.update({
+    id: '/modelo-email',
+    path: '/modelo-email',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPainelRoute = AuthenticatedPainelRouteImport.update({
+  id: '/painel',
+  path: '/painel',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedRecorrenteRoute = AuthenticatedRecorrenteRouteImport.update({
+  id: '/recorrente',
+  path: '/recorrente',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSaudeRoute = AuthenticatedSaudeRouteImport.update({
+  id: '/saude',
+  path: '/saude',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const ApiGmailCallbackRoute = ApiGmailCallbackRouteImport.update({
+  id: '/api/gmail-callback',
+  path: '/api/gmail-callback',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicHooksAvisosRoute = ApiPublicHooksAvisosRouteImport.update({
   id: '/api/public/hooks/avisos',
@@ -228,25 +228,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/gmail-cb': {
-      id: '/gmail-cb'
-      path: '/gmail-cb'
-      fullPath: '/gmail-cb'
-      preLoaderRoute: typeof GmailCbRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -256,67 +242,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/gmail-callback': {
-      id: '/api/gmail-callback'
-      path: '/api/gmail-callback'
-      fullPath: '/api/gmail-callback'
-      preLoaderRoute: typeof ApiGmailCallbackRouteImport
+    '/gmail-cb': {
+      id: '/gmail-cb'
+      path: '/gmail-cb'
+      fullPath: '/gmail-cb'
+      preLoaderRoute: typeof GmailCbRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/saude': {
-      id: '/_authenticated/saude'
-      path: '/saude'
-      fullPath: '/saude'
-      preLoaderRoute: typeof AuthenticatedSaudeRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/recorrente': {
-      id: '/_authenticated/recorrente'
-      path: '/recorrente'
-      fullPath: '/recorrente'
-      preLoaderRoute: typeof AuthenticatedRecorrenteRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/painel': {
-      id: '/_authenticated/painel'
-      path: '/painel'
-      fullPath: '/painel'
-      preLoaderRoute: typeof AuthenticatedPainelRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/modelo-email': {
-      id: '/_authenticated/modelo-email'
-      path: '/modelo-email'
-      fullPath: '/modelo-email'
-      preLoaderRoute: typeof AuthenticatedModeloEmailRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/lancamentos': {
-      id: '/_authenticated/lancamentos'
-      path: '/lancamentos'
-      fullPath: '/lancamentos'
-      preLoaderRoute: typeof AuthenticatedLancamentosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/diarias': {
-      id: '/_authenticated/diarias'
-      path: '/diarias'
-      fullPath: '/diarias'
-      preLoaderRoute: typeof AuthenticatedDiariasRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/categorias': {
-      id: '/_authenticated/categorias'
-      path: '/categorias'
-      fullPath: '/categorias'
-      preLoaderRoute: typeof AuthenticatedCategoriasRouteImport
+    '/_authenticated/avisos': {
+      id: '/_authenticated/avisos'
+      path: '/avisos'
+      fullPath: '/avisos'
+      preLoaderRoute: typeof AuthenticatedAvisosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/calendario': {
@@ -326,12 +277,61 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCalendarioRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/avisos': {
-      id: '/_authenticated/avisos'
-      path: '/avisos'
-      fullPath: '/avisos'
-      preLoaderRoute: typeof AuthenticatedAvisosRouteImport
+    '/_authenticated/categorias': {
+      id: '/_authenticated/categorias'
+      path: '/categorias'
+      fullPath: '/categorias'
+      preLoaderRoute: typeof AuthenticatedCategoriasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/diarias': {
+      id: '/_authenticated/diarias'
+      path: '/diarias'
+      fullPath: '/diarias'
+      preLoaderRoute: typeof AuthenticatedDiariasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/lancamentos': {
+      id: '/_authenticated/lancamentos'
+      path: '/lancamentos'
+      fullPath: '/lancamentos'
+      preLoaderRoute: typeof AuthenticatedLancamentosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/modelo-email': {
+      id: '/_authenticated/modelo-email'
+      path: '/modelo-email'
+      fullPath: '/modelo-email'
+      preLoaderRoute: typeof AuthenticatedModeloEmailRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/painel': {
+      id: '/_authenticated/painel'
+      path: '/painel'
+      fullPath: '/painel'
+      preLoaderRoute: typeof AuthenticatedPainelRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/recorrente': {
+      id: '/_authenticated/recorrente'
+      path: '/recorrente'
+      fullPath: '/recorrente'
+      preLoaderRoute: typeof AuthenticatedRecorrenteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/saude': {
+      id: '/_authenticated/saude'
+      path: '/saude'
+      fullPath: '/saude'
+      preLoaderRoute: typeof AuthenticatedSaudeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/gmail-callback': {
+      id: '/api/gmail-callback'
+      path: '/api/gmail-callback'
+      fullPath: '/api/gmail-callback'
+      preLoaderRoute: typeof ApiGmailCallbackRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/avisos': {
       id: '/api/public/hooks/avisos'
