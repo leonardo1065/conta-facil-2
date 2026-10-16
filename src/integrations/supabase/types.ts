@@ -60,6 +60,7 @@ export type Database = {
           barcode: string | null
           category_id: string | null
           created_at: string
+          daily_archived: boolean
           description: string
           due_date: string
           id: string
@@ -85,6 +86,7 @@ export type Database = {
           barcode?: string | null
           category_id?: string | null
           created_at?: string
+          daily_archived?: boolean
           description: string
           due_date: string
           id?: string
@@ -110,6 +112,7 @@ export type Database = {
           barcode?: string | null
           category_id?: string | null
           created_at?: string
+          daily_archived?: boolean
           description?: string
           due_date?: string
           id?: string

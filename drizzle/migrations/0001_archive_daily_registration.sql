@@ -1,0 +1,2 @@
+ALTER TABLE public.entries ADD COLUMN IF NOT EXISTS daily_archived boolean NOT NULL DEFAULT false;
+COMMENT ON COLUMN public.entries.daily_archived IS 'Retira o cadastro da lista de diárias sem excluir os lançamentos ou seu histórico mensal.';

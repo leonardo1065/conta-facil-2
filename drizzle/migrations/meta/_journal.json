@@ -8,6 +8,13 @@
       "when": 1789900717499,
       "tag": "0000_add_secondary_notification_email",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792158310487,
+      "tag": "0001_archive_daily_registration",
+      "breakpoints": true
     }
   ]
 }
