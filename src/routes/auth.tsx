@@ -446,6 +446,24 @@ function AuthPage() {
                 <Button type="submit" className="w-full" disabled={carregando}>
                   {carregando ? "Entrando..." : "Entrar"}
                 </Button>
+                <button
+                  type="button"
+                  className="w-full text-sm text-primary underline"
+                  onClick={async () => {
+                    const email = emailLogin.trim().toLowerCase();
+                    if (!emailValido(email)) {
+                      setErroLogin("Digite seu e-mail acima para receber o link de nova senha.");
+                      return;
+                    }
+                    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                      redirectTo: `${window.location.origin}/reset-password`,
+                    });
+                    if (error) toast.error(traduzirErro(error, "entrar"));
+                    else toast.success("Enviamos um link para criar nova senha. Confira também o spam.");
+                  }}
+                >
+                  Esqueci minha senha
+                </button>
               </form>
             </TabsContent>
 
