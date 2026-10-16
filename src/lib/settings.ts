@@ -13,6 +13,7 @@ export type Settings = {
   notify_health: boolean;
   notify_hour: number;
   notify_on_due_date: boolean;
+  notify_browser: boolean;
   health_days_before: number;
   notify_whatsapp: boolean;
   health_notify_email: string | null;
@@ -36,7 +37,7 @@ export type SmtpConfig = {
 };
 
 const COLS =
-  "display_name, notify_email, notify_email_secondary, whatsapp, notify_days_before, notify_enabled, notify_health, notify_hour, notify_on_due_date, health_days_before, notify_whatsapp, health_notify_email, health_notify_whatsapp, health_via_email, health_via_whatsapp, email_subject_tpl, email_body_tpl, smtp_config";
+  "display_name, notify_email, notify_email_secondary, whatsapp, notify_days_before, notify_enabled, notify_health, notify_hour, notify_on_due_date, notify_browser, health_days_before, notify_whatsapp, health_notify_email, health_notify_whatsapp, health_via_email, health_via_whatsapp, email_subject_tpl, email_body_tpl, smtp_config";
 
 
 export function useSettings() {

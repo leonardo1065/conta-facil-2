@@ -12,6 +12,8 @@ export const Route = createFileRoute("/")({
           "Organize contas a pagar e receber em reais: alertas de vencimento, calendário mensal, recorrência e leitura de boleto e Pix.",
       },
       { property: "og:title", content: "Agenda de Contas — Financeiro Doméstico" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       {
         property: "og:description",
         content:

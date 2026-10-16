@@ -268,12 +268,14 @@ export type Database = {
           health_via_email: boolean
           health_via_whatsapp: boolean
           id: string
+          notify_browser: boolean
           notify_days_before: number
           notify_email: string | null
           notify_email_secondary: string | null
           notify_enabled: boolean
           notify_health: boolean
           notify_hour: number
+          notify_on_due_date: boolean
           notify_whatsapp: boolean
           oauth_access_token: string | null
           oauth_refresh_token: string | null
@@ -293,12 +295,14 @@ export type Database = {
           health_via_email?: boolean
           health_via_whatsapp?: boolean
           id: string
+          notify_browser?: boolean
           notify_days_before?: number
           notify_email?: string | null
           notify_email_secondary?: string | null
           notify_enabled?: boolean
           notify_health?: boolean
           notify_hour?: number
+          notify_on_due_date?: boolean
           notify_whatsapp?: boolean
           oauth_access_token?: string | null
           oauth_refresh_token?: string | null
@@ -318,12 +322,14 @@ export type Database = {
           health_via_email?: boolean
           health_via_whatsapp?: boolean
           id?: string
+          notify_browser?: boolean
           notify_days_before?: number
           notify_email?: string | null
           notify_email_secondary?: string | null
           notify_enabled?: boolean
           notify_health?: boolean
           notify_hour?: number
+          notify_on_due_date?: boolean
           notify_whatsapp?: boolean
           oauth_access_token?: string | null
           oauth_refresh_token?: string | null
