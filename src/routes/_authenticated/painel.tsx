@@ -3,6 +3,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   AlertTriangle,
   CalendarClock,
+  Eye,
+  EyeOff,
   Plus,
   Settings,
   Search,
@@ -47,6 +49,24 @@ function Painel() {
   const [config, setConfig] = useState(false);
   const [emEdicao, setEmEdicao] = useState<Entry | null>(null);
   const [busca, setBusca] = useState("");
+  const [oculto, setOculto] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("ocultar-valores") === "1";
+  });
+
+  const alternarOculto = () => {
+    setOculto((atual) => {
+      const novo = !atual;
+      try {
+        window.localStorage.setItem("ocultar-valores", novo ? "1" : "0");
+      } catch {
+        // ignora indisponibilidade do armazenamento local
+      }
+      return novo;
+    });
+  };
+
+  const exibirValor = (valor: number) => (oculto ? "•••••" : formatBRL(valor));
 
   const buckets = getDueBuckets(entries);
   // Mês corrente pelo fuso America/Sao_Paulo (GMT-3), não pelo fuso do navegador.
