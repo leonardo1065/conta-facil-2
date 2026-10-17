@@ -42,6 +42,8 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_authenticated/saude")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: "Saúde — Agenda de Contas" },
       {
         name: "description",
