@@ -24,6 +24,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { AvulsaAddDialog } from "@/components/AvulsaAddDialog";
+import { buildDailyHistory, formatAdditionDate, latestDailyAddition } from "@/lib/daily-history";
+import { useDailyValues } from "@/lib/daily-history-query";
 import {
   currentMonthRef,
   formatBRL,
@@ -32,7 +34,6 @@ import {
   todayISO,
 } from "@/lib/dates";
 import {
-  useAddToAvulsa,
   useArchiveDaily,
   useEntries,
   useSaveEntry,
@@ -61,12 +62,11 @@ export const Route = createFileRoute("/_authenticated/diarias")({
 });
 
 const SUGESTOES = ["Padaria", "Mercado", "Farmácia", "Almoço", "Combustível", "Lanche"];
-const ATALHOS = [5, 10, 20, 50, 100];
 
 function Diarias() {
   const { data: entries, isLoading } = useEntries();
   const salvar = useSaveEntry();
-  const somar = useAddToAvulsa();
+  const { data: values = [], isLoading: loadingValues, isError: historyError } = useDailyValues();
   const excluir = useArchiveDaily();
   const [aExcluir, setAExcluir] = useState<Entry | null>(null);
   const [novo, setNovo] = useState(false);
@@ -90,49 +90,12 @@ function Diarias() {
     return [...porSerie.values()].sort((a, b) => a.description.localeCompare(b.description));
   }, [entries, ref]);
 
-  const totalMes = contas.reduce(
+  const totalMes = (entries ?? []).filter((e) => e.is_avulsa).reduce(
     (acc, e) => acc + (e.month_ref === ref ? Number(e.amount) : 0),
     0,
   );
 
-  // Histórico: todos os meses já registrados (inclusive o atual), com detalhe por gasto.
-  const historico = useMemo(() => {
-    const meses = new Map<string, Map<string, Entry[]>>();
-    for (const e of entries ?? []) {
-      if (!e.is_avulsa) continue;
-      const mes = e.month_ref ?? e.due_date.slice(0, 7);
-      if (!meses.has(mes)) meses.set(mes, new Map());
-      const mesMap = meses.get(mes);
-      if (!mesMap) continue;
-      const key = e.description;
-      if (!mesMap.has(key)) mesMap.set(key, []);
-      mesMap.get(key)?.push(e);
-    }
-    return [...meses.entries()]
-      .sort((a, b) => b[0].localeCompare(a[0]))
-      .map(([mes, descMap]) => {
-        const itens: { desc: string; amount: number; date: string; paidAt: string | null; status: string }[] = [];
-        let total = 0;
-        descMap.forEach((ents, desc) => {
-          ents.forEach((e) => {
-            const amount = Number(e.amount);
-            total += amount;
-            itens.push({
-              desc,
-              amount,
-              date: e.due_date,
-              paidAt: e.paid_at,
-              status: e.status,
-            });
-          });
-        });
-        return {
-          mes,
-          total,
-          itens: itens.sort((a, b) => a.date.localeCompare(b.date)),
-        };
-      });
-  }, [entries]);
+  const historico = useMemo(() => buildDailyHistory(entries ?? [], values), [entries, values]);
 
   const [mesAberto, setMesAberto] = useState<string | null>(null);
 
@@ -175,19 +138,6 @@ function Diarias() {
     }
   }
 
-  async function somarRapido(entry: Entry, valor: number) {
-    try {
-      const res = await somar.mutateAsync({ entry, valor });
-      toast.success(
-        res?.novoMes
-          ? `Novo mês iniciado em ${entry.description}: ${formatBRL(valor)}`
-          : `+${formatBRL(valor)} em ${entry.description}`,
-      );
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao somar valor.");
-    }
-  }
-
   async function confirmarExclusao() {
     if (!aExcluir) return;
     const alvo = aExcluir;
@@ -223,10 +173,7 @@ function Diarias() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
-        <p className="text-sm text-muted-foreground">Total gasto em {formatMonth(new Date())}</p>
-        <p className="text-3xl font-bold">{formatBRL(totalMes)}</p>
-      </div>
+
 
       {faltando.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -245,6 +192,8 @@ function Diarias() {
         </div>
       )}
 
+      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_280px]">
+      <div className="min-w-0">
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Carregando...</p>
       ) : contas.length === 0 ? (
@@ -255,9 +204,10 @@ function Diarias() {
           </p>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 print:grid-cols-1 print:gap-1">
+        <div className="grid gap-4 sm:grid-cols-2 print:grid-cols-1 print:gap-1">
           {contas.map((c) => {
             const acumulado = c.month_ref === ref ? Number(c.amount) : 0;
+            const lastAddition = latestDailyAddition(values, c.id);
             return (
               <div
                 key={c.id}
@@ -268,6 +218,7 @@ function Diarias() {
                     <p className="font-semibold">{c.description}</p>
                     <p className="text-2xl font-bold">{formatBRL(acumulado)}</p>
                     <p className="text-xs text-muted-foreground print:hidden">acumulado no mês</p>
+                    {lastAddition && <p className="mt-1 text-xs text-muted-foreground">Última inclusão: {formatAdditionDate(lastAddition)}</p>}
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     <div className="hidden print:block text-right">
@@ -279,7 +230,7 @@ function Diarias() {
                       className="print:hidden"
                       aria-label={`Excluir ${c.description}`}
                       title="Excluir conta diária"
-                      disabled={excluir.isPending || somar.isPending}
+                      disabled={excluir.isPending}
                       onClick={() => setAExcluir(c)}
                     >
                       <Trash2 className="size-4 text-destructive" />
@@ -287,19 +238,8 @@ function Diarias() {
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-1.5 print:hidden">
-                  {ATALHOS.map((v) => (
-                    <Button
-                      key={v}
-                      size="sm"
-                      variant="secondary"
-                      disabled={somar.isPending || excluir.isPending}
-                      onClick={() => void somarRapido(c, v)}
-                    >
-                      +{v}
-                    </Button>
-                  ))}
-                  <Button size="sm" variant="outline" disabled={excluir.isPending} onClick={() => setEmSoma(c)}>
-                    Outro valor
+                  <Button size="sm" variant="outline" className="gap-2" disabled={excluir.isPending} onClick={() => setEmSoma(c)}>
+                    <Plus className="size-4" /> Incluir valor
                   </Button>
                 </div>
               </div>
@@ -308,68 +248,67 @@ function Diarias() {
         </div>
       )}
 
-      {historico.length > 0 && (
-        <div className="rounded-2xl border border-border bg-card p-5 shadow-soft print:border-none print:shadow-none print:p-0">
-          <h2 className="text-lg font-semibold">Histórico de gastos por mês</h2>
-          <p className="text-sm text-muted-foreground print:hidden">
-            Tudo o que já foi lançado fica guardado aqui, mês a mês. Toque em um mês para ver
-            os detalhes.
-          </p>
-          <ul className="mt-4 divide-y divide-border">
+      <section className="mt-6 print:mt-3">
+        <h2 className="text-lg font-semibold">Histórico de valores</h2>
+        {loadingValues ? <p className="mt-3 text-sm text-muted-foreground">Carregando histórico...</p> : historyError ? (
+          <p className="mt-3 text-sm text-destructive">Não foi possível carregar as datas dos valores. Tente novamente.</p>
+        ) : historico.length === 0 ? (
+          <p className="mt-3 text-sm text-muted-foreground">Nenhum valor incluído ainda.</p>
+        ) : (
+          <ul className="mt-3 divide-y divide-border">
             {historico.map((h) => {
-              const [ano, mes] = h.mes.split("-").map(Number);
+              const [ano, mes] = h.month.split("-").map(Number);
               const rotulo = formatMonth(new Date(ano ?? 2026, (mes ?? 1) - 1, 1));
-              const aberto = mesAberto === h.mes || h.mes === ref;
+              const aberto = mesAberto === h.month || h.month === ref;
               return (
-                <li key={h.mes} className="py-2">
-                  <button
-                    type="button"
-                    className="flex w-full items-center justify-between gap-3 text-left"
-                    onClick={() => setMesAberto(aberto && h.mes !== ref ? null : h.mes)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{rotulo}</span>
-                      <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
-                        {h.itens.length} lançamento{h.itens.length !== 1 ? "s" : ""}
-                      </span>
-                    </div>
-                    <span className="font-semibold">{formatBRL(h.total)}</span>
-                  </button>
-                  {aberto && (
-                    <ul className="mt-2 space-y-1 pl-1 text-sm text-muted-foreground print:text-black">
-                      {h.itens.map((i, idx) => (
-                        <li
-                          key={`${h.mes}-${idx}`}
-                          className={`flex flex-wrap items-center justify-between gap-2 rounded-lg px-2 py-1.5 ${i.status === "pago" ? "bg-green-50 dark:bg-green-950/30" : "bg-yellow-50 dark:bg-yellow-950/30"}`}
-                        >
-                          <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
-                            <span className={i.status === "pago" ? "text-green-700 dark:text-green-400 font-medium" : "text-yellow-700 dark:text-yellow-400 font-medium"}>
-                              {i.status === "pago" ? "✓ Pago" : "○ Pendente"}
-                            </span>
-                            <span>{i.desc}</span>
-                            <span className="text-xs">
-                              {new Date(i.date + "T00:00:00").toLocaleDateString("pt-BR")}
-                            </span>
-                            {i.paidAt && (
-                              <span className="text-xs text-green-600 dark:text-green-400">
-                                em {new Date(i.paidAt + "T00:00:00").toLocaleDateString("pt-BR")}
-                              </span>
-                            )}
-                          </div>
-                          <span className={`font-semibold ${i.status === "pago" ? "text-green-700 dark:text-green-400" : "text-yellow-700 dark:text-yellow-400"}`}>
-                            {formatBRL(i.amount)}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                <li key={h.month} className="py-3">
+                  <Button variant="ghost" className="h-auto w-full justify-between whitespace-normal px-0 text-left" aria-expanded={aberto}
+                    onClick={() => setMesAberto(aberto && h.month !== ref ? null : h.month)}>
+                    <span className="font-medium">{rotulo}</span>
+                    <span className="font-semibold tabular-nums">{formatBRL(h.total)}</span>
+                  </Button>
+                  {aberto && <ul className="mt-2 divide-y divide-border">
+                    {h.accounts.map((account) => (
+                      <li key={account.key} className="py-3">
+                        <div className="flex justify-between gap-3 text-sm font-semibold">
+                          <span className="min-w-0 break-words">{account.description}</span>
+                          <span className="shrink-0 tabular-nums">{formatBRL(account.total)}</span>
+                        </div>
+                        <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+                          {account.values.map((value) => (
+                            <li key={value.id} className="flex justify-between gap-3">
+                              <span>{value.date ? formatAdditionDate(value.date) : "Saldo anterior · data não registrada"}</span>
+                              <span className="shrink-0 tabular-nums">{formatBRL(value.amount)}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </li>
+                    ))}
+                  </ul>}
                 </li>
               );
             })}
           </ul>
+        )}
+      </section>
+      </div>
+      <aside className="space-y-4 border-t border-border pt-4 xl:sticky xl:top-20 xl:border-t-0 xl:border-l xl:pl-5 xl:pt-0">
+        <h2 className="font-semibold">Resumo do mês</h2>
+        <p className="text-sm text-muted-foreground">{formatMonth(new Date())}</p>
+        <ul className="space-y-2 text-sm">
+          {contas.map((account) => (
+            <li key={account.id} className="flex justify-between gap-3">
+              <span className="min-w-0 break-words">{account.description}</span>
+              <span className="shrink-0 tabular-nums">{formatBRL(account.month_ref === ref ? Number(account.amount) : 0)}</span>
+            </li>
+          ))}
+        </ul>
+        <div className="border-t border-border pt-3">
+          <p className="text-sm text-muted-foreground">Total final do mês</p>
+          <p className="text-2xl font-bold tabular-nums">{formatBRL(totalMes)}</p>
         </div>
-      )}
-
+      </aside>
+      </div>
 
       <Dialog open={novo} onOpenChange={setNovo}>
         <DialogContent className="sm:max-w-sm">
