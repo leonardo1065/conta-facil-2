@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Daily value history uses an additive database-triggered ledger; monthly entries remain the source of truth for totals, and pre-ledger balances never receive inferred inclusion dates, preserving existing data.
