@@ -11,6 +11,8 @@ import { useEntries, type Entry } from "@/lib/finance";
 export const Route = createFileRoute("/_authenticated/lancamentos")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: "Lançamentos — Agenda de Contas" },
       { name: "description", content: "Cadastre, edite, pague e exclua despesas e receitas da casa." },
       { property: "og:title", content: "Lançamentos — Agenda de Contas" },

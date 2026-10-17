@@ -265,7 +265,12 @@ export function useAddToAvulsa() {
       if (error) throw error;
       return { novoMes: true };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["entries"] }),
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["entries"] }),
+        qc.invalidateQueries({ queryKey: ["daily-values"] }),
+      ]);
+    },
   });
 }
 

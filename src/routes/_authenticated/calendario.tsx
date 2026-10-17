@@ -11,6 +11,8 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_authenticated/calendario")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: "Calendário — Agenda de Contas" },
       { name: "description", content: "Veja as contas de cada dia do mês e quite direto pelo calendário." },
       { property: "og:title", content: "Calendário — Agenda de Contas" },

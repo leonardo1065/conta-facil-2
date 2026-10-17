@@ -18,6 +18,8 @@ import { useCategories, useDeleteCategory, useSaveCategory, type EntryKind } fro
 export const Route = createFileRoute("/_authenticated/categorias")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: "Categorias — Agenda de Contas" },
       { name: "description", content: "Crie e organize categorias de despesas e receitas com cores próprias." },
       { property: "og:title", content: "Categorias — Agenda de Contas" },

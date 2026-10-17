@@ -53,6 +53,30 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_value_history: {
+        Row: {
+          added_at: string
+          amount: number
+          entry_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          added_at?: string
+          amount: number
+          entry_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          added_at?: string
+          amount?: number
+          entry_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       entries: {
         Row: {
           amount: number
