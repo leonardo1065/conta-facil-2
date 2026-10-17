@@ -10,4 +10,4 @@
 - [x] Permitir um segundo e-mail destinatário para todos os avisos
 - [x] Excluir somente o cadastro da diária selecionada, preservando o histórico mensal
 - [x] Organizar os botões de navegação na lateral e despoluir a página inicial, sem alterar dados cadastrados
-- [ ] Retirar valores rápidos das diárias e mostrar histórico dos valores com data de inclusão, preservando totais e registros existentes
+- [x] Retirar valores rápidos das diárias e mostrar histórico dos valores com data de inclusão, preservando totais e registros existentes

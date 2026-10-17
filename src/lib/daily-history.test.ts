@@ -1,3 +1,4 @@
+/// <reference types="bun" />
 import { describe, expect, test } from "bun:test";
 import { buildDailyHistory, formatAdditionDate, latestDailyAddition } from "./daily-history";
 import type { Entry } from "./finance";
