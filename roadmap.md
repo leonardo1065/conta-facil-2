@@ -11,4 +11,4 @@
 - [x] Excluir somente o cadastro da diária selecionada, preservando o histórico mensal
 - [x] Organizar os botões de navegação na lateral e despoluir a página inicial, sem alterar dados cadastrados
 - [x] Retirar valores rápidos das diárias e mostrar histórico dos valores com data de inclusão, preservando totais e registros existentes
-- [ ] Organizar o painel por mês, categoria e situação, reunindo contas recorrentes e saúde sem alterar dados
+- [x] Organizar o painel por mês, categoria e situação, reunindo contas recorrentes e saúde sem alterar dados
