@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Search } from "lucide-react";
+import { MapPin, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -89,6 +89,18 @@ export function HealthDialog({ open, onOpenChange, event }: Props) {
 
   const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
+
+  function montarEndereco() {
+    const partes = [
+      form.street.trim() && form.number.trim()
+        ? `${form.street.trim()}, ${form.number.trim()}`
+        : form.street.trim(),
+      form.district.trim(),
+      form.city.trim() && form.state.trim() ? `${form.city.trim()} - ${form.state.trim()}` : form.city.trim(),
+      form.cep.trim(),
+    ].filter(Boolean);
+    return partes.join(", ");
+  }
 
   async function preencherPorCep(cep: string) {
     if (cep.replace(/\D/g, "").length !== 8) return;
@@ -384,6 +396,31 @@ export function HealthDialog({ open, onOpenChange, event }: Props) {
                 onChange={(e) => set("state", e.target.value.toUpperCase())}
               />
             </div>
+          </div>
+
+          <div className="sm:col-span-2">
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full"
+              disabled={!montarEndereco()}
+              onClick={() => {
+                const endereco = montarEndereco();
+                if (endereco) {
+                  window.open(
+                    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(endereco)}`,
+                    "_blank",
+                    "noopener,noreferrer",
+                  );
+                }
+              }}
+            >
+              <MapPin className="mr-2 size-4" />
+              Ver no mapa
+            </Button>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Abre o Google Maps com o endereço e CEP preenchidos acima.
+            </p>
           </div>
 
           <div className="space-y-1.5 sm:col-span-2">
