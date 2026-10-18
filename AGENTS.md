@@ -10,3 +10,4 @@
 <!-- LOVABLE:END -->
 
 - Daily value history uses an additive database-triggered ledger; monthly entries remain the source of truth for totals, and pre-ledger balances never receive inferred inclusion dates, preserving existing data.
+- The monthly panel uses pure selectors over existing entries and health events; changing filters must never generate future occurrences or mutate stored records.
