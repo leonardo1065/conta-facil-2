@@ -1,278 +1,140 @@
-import { useMemo, useState, useRef } from "react";
-import { createFileRoute } from "@tanstack/react-router";
-import {
-  AlertTriangle,
-  CalendarClock,
-  Eye,
-  EyeOff,
-  Plus,
-  Settings,
-  Search,
-  Printer,
-  Sun,
-  TrendingDown,
-  TrendingUp,
-  Wallet,
-} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { AlertTriangle, CalendarClock, Check, CheckCircle2, ChevronLeft, ChevronRight, Eye, EyeOff, HeartPulse, List, Pencil, Plus, Repeat, Search, Sun, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EntryList } from "@/components/EntryList";
 import { EntryDialog } from "@/components/EntryDialog";
-import { NowCard } from "@/components/NowCard";
-import { DueAlertBanner } from "@/components/DueAlertBanner";
-
-import { SettingsDialog } from "@/components/SettingsDialog";
-import { getDueBuckets, sum } from "@/lib/dueBuckets";
-import { formatBRL, formatMonth, monthRange, todayISO } from "@/lib/dates";
+import { HealthDialog } from "@/components/HealthDialog";
+import { sum } from "@/lib/dueBuckets";
+import { addMonths, currentMonthRef, formatBRL, formatDate, formatMonth, parseISO, todayISO } from "@/lib/dates";
 import { useCategories, useEntries, type Entry } from "@/lib/finance";
+import { HEALTH_KIND_LABEL, useHealthEvents, useToggleHealthDone, type HealthEvent } from "@/lib/health";
+import { monthlyEntries, monthlyHealth, panelEntries, type PanelView } from "@/lib/monthly-panel";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/painel")({
-  head: () => ({
-    meta: [
-      { title: "Painel — Agenda de Contas" },
-      { name: "description", content: "Vencimentos em destaque, totais do mês e gastos por categoria." },
-      { property: "og:title", content: "Painel — Agenda de Contas" },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { property: "og:description", content: "Vencimentos em destaque, totais do mês e gastos por categoria." },
-    ],
-  }),
+  head: () => ({ meta: [
+    { title: "Gestão mensal — Agenda de Contas" },
+    { name: "description", content: "Contas, pagamentos, recorrências e saúde organizados por mês, categoria e situação." },
+    { property: "og:title", content: "Gestão mensal — Agenda de Contas" },
+    { property: "og:description", content: "Contas, pagamentos, recorrências e saúde organizados por mês, categoria e situação." },
+    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
+  ] }),
   component: Painel,
 });
 
-function Painel() {
-  const { data: entries, isLoading } = useEntries();
-  const { data: categories } = useCategories();
-  const [dialogo, setDialogo] = useState(false);
-  const [config, setConfig] = useState(false);
-  const [emEdicao, setEmEdicao] = useState<Entry | null>(null);
-  const [busca, setBusca] = useState("");
-  const [oculto, setOculto] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return window.localStorage.getItem("ocultar-valores") === "1";
-  });
+const views = [
+  { value: "todos", label: "Contas do mês", icon: List },
+  { value: "recorrentes", label: "Recorrentes", icon: Repeat },
+  { value: "pendentes", label: "Pendentes", icon: CalendarClock },
+  { value: "hoje", label: "Vence hoje", icon: Sun },
+  { value: "pagos", label: "Pagos", icon: CheckCircle2 },
+  { value: "vencidos", label: "Vencidos", icon: AlertTriangle },
+  { value: "saude", label: "Saúde", icon: HeartPulse },
+] satisfies { value: PanelView; label: string; icon: typeof List }[];
 
-  const alternarOculto = () => {
-    setOculto((atual) => {
-      const novo = !atual;
-      try {
-        window.localStorage.setItem("ocultar-valores", novo ? "1" : "0");
-      } catch {
-        // ignora indisponibilidade do armazenamento local
-      }
-      return novo;
+function Painel() {
+  const { data: entries = [], isLoading, error } = useEntries();
+  const { data: categories = [] } = useCategories();
+  const { data: events = [], isLoading: healthLoading, error: healthError } = useHealthEvents();
+  const toggleHealth = useToggleHealthDone();
+  const [month, setMonth] = useState(currentMonthRef);
+  const [category, setCategory] = useState("todas");
+  const [view, setView] = useState<PanelView>("todos");
+  const [search, setSearch] = useState("");
+  const [dialog, setDialog] = useState(false);
+  const [editing, setEditing] = useState<Entry | null>(null);
+  const [healthDialog, setHealthDialog] = useState(false);
+  const [editingHealth, setEditingHealth] = useState<HealthEvent | null>(null);
+  const [hidden, setHidden] = useState(false);
+  useEffect(() => {
+    try { setHidden(window.localStorage.getItem("ocultar-valores") === "1"); } catch { /* storage unavailable */ }
+  }, []);
+  const toggleHidden = () => {
+    setHidden((previous) => {
+      const next = !previous;
+      try { window.localStorage.setItem("ocultar-valores", next ? "1" : "0"); } catch { /* storage unavailable */ }
+      return next;
     });
   };
-
-  const exibirValor = (valor: number) => (oculto ? "•••••" : formatBRL(valor));
-
-  const buckets = getDueBuckets(entries);
-  // Mês corrente pelo fuso America/Sao_Paulo (GMT-3), não pelo fuso do navegador.
-  const [anoHoje, mesHoje] = todayISO().split("-").map(Number);
-  const { start, end } = monthRange(anoHoje, mesHoje - 1);
-
-  const doMes = useMemo(
-    () => (entries ?? []).filter((e) => e.due_date >= start && e.due_date <= end),
-    [entries, start, end],
-  );
-
-  const aPagar = doMes.filter((e) => e.kind === "despesa" && e.status === "pendente");
-  const pago = doMes.filter((e) => e.kind === "despesa" && e.status === "pago");
-  const receitas = doMes.filter((e) => e.kind === "receita");
-  const saldo = sum(receitas) - sum(aPagar) - sum(pago);
-
-  const porCategoria = useMemo(() => {
-    const mapa = new Map<string, { name: string; color: string; value: number }>();
-    for (const e of doMes.filter((x) => x.kind === "despesa")) {
-      const cat = categories?.find((c) => c.id === e.category_id);
-      const key = cat?.id ?? "sem";
-      const atual = mapa.get(key) ?? {
-        name: cat?.name ?? "Sem categoria",
-        color: cat?.color ?? "#94a3b8",
-        value: 0,
-      };
-      atual.value += e.amount;
-      mapa.set(key, atual);
-    }
-    return [...mapa.values()].sort((a, b) => b.value - a.value);
-  }, [doMes, categories]);
-
-  const alerta = [
-    {
-      titulo: "Vencidas",
-      icon: AlertTriangle,
-      itens: buckets.vencidas,
-      classe: "border-destructive/40 bg-destructive/10 text-destructive",
-    },
-    {
-      titulo: "Vence hoje",
-      icon: Sun,
-      itens: buckets.hoje,
-      classe: "border-warning/50 bg-warning/15 text-warning",
-    },
-    {
-      titulo: "Próximos 7 dias",
-      icon: CalendarClock,
-      itens: buckets.proximos,
-      classe: "border-info/40 bg-info/10 text-info",
-    },
+  const money = (value: number) => hidden ? "•••••" : formatBRL(value);
+  const today = todayISO();
+  const monthLabel = formatMonth(parseISO(`${month}-01`));
+  const months = useMemo(() => {
+    const values = new Set([month, currentMonthRef()]);
+    for (let offset = -12; offset <= 24; offset++) values.add(addMonths(`${currentMonthRef()}-01`, offset).slice(0, 7));
+    entries.forEach((entry) => values.add(entry.due_date.slice(0, 7)));
+    events.forEach((event) => values.add(event.scheduled_date.slice(0, 7)));
+    return [...values].sort();
+  }, [entries, events, month]);
+  const monthEntries = monthlyEntries(entries, month, category);
+  const monthEvents = monthlyHealth(events, month);
+  const query = search.trim().toLocaleLowerCase("pt-BR");
+  const list = panelEntries(monthEntries, view, today).filter((entry) => !query || entry.description.toLocaleLowerCase("pt-BR").includes(query) || categories.find((item) => item.id === entry.category_id)?.name.toLocaleLowerCase("pt-BR").includes(query));
+  const healthList = monthEvents.filter((event) => !query || `${event.title} ${event.place_name ?? ""} ${HEALTH_KIND_LABEL[event.kind]}`.toLocaleLowerCase("pt-BR").includes(query));
+  const pending = monthEntries.filter((entry) => entry.kind === "despesa" && !entry.is_avulsa && entry.status === "pendente");
+  const paid = monthEntries.filter((entry) => entry.kind === "despesa" && entry.status === "pago");
+  const income = monthEntries.filter((entry) => entry.kind === "receita");
+  const daily = monthEntries.filter((entry) => entry.kind === "despesa" && entry.is_avulsa);
+  const balance = sum(income) - sum(monthEntries.filter((entry) => entry.kind === "despesa"));
+  const summaries = [
+    { label: "A pagar", amount: sum(pending), icon: TrendingDown },
+    { label: "Pago", amount: sum(paid), icon: CheckCircle2 },
+    { label: "Diárias / avulsas", amount: sum(daily), icon: Wallet },
+    { label: "Receitas", amount: sum(income), icon: TrendingUp },
+    { label: "Saldo final", amount: balance, icon: Wallet },
   ];
 
-  const destaque = [...buckets.vencidas, ...buckets.hoje, ...buckets.proximos];
-
-  const destaqueFiltrado = useMemo(() => {
-    const termo = busca.trim().toLowerCase();
-    if (!termo) return destaque;
-    return destaque.filter((e) => {
-      const cat = categories?.find((c) => c.id === e.category_id);
-      return (
-        e.description.toLowerCase().includes(termo) ||
-        (cat?.name ?? "").toLowerCase().includes(termo)
-      );
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [busca, categories, entries]);
-
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <p className="text-sm font-medium capitalize text-muted-foreground">{formatMonth(new Date(anoHoje, mesHoje - 1, 1))}</p>
-        <div className="flex flex-wrap items-center gap-3">
-          <Button
-            className="gap-2"
-            onClick={() => {
-              setEmEdicao(null);
-              setDialogo(true);
-            }}
-          >
-            <Plus className="size-4" /> Novo
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label={oculto ? "Mostrar valores" : "Ocultar valores"}
-            title={oculto ? "Mostrar valores" : "Ocultar valores"}
-            onClick={alternarOculto}
-          >
-            {oculto ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-          </Button>
+    <div className="min-w-0 space-y-5">
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-xl font-semibold">Gestão de contas</h1>
+        <div className="flex items-center gap-2 print:hidden">
+          <Button variant="ghost" size="icon" aria-label={hidden ? "Mostrar valores" : "Ocultar valores"} title={hidden ? "Mostrar valores" : "Ocultar valores"} onClick={toggleHidden}>{hidden ? <EyeOff className="size-4" /> : <Eye className="size-4" />}</Button>
+          <Button onClick={() => { if (view === "saude") { setEditingHealth(null); setHealthDialog(true); } else { setEditing(null); setDialog(true); } }}><Plus className="size-4" />{view === "saude" ? "Novo agendamento" : "Nova conta"}</Button>
         </div>
-      </div>
+      </header>
 
-
-      <section className="grid gap-3 sm:grid-cols-3">
-
-        {alerta.map((bloco) => (
-          <div key={bloco.titulo} className={cn("rounded-2xl border p-4", bloco.classe)}>
-            <div className="flex items-center gap-2 text-sm font-semibold">
-              <bloco.icon className="size-4" />
-              {bloco.titulo}
+      <section aria-label="Filtros do painel" className="space-y-4 border-y border-border py-4">
+        <div className="grid min-w-0 gap-3 md:grid-cols-2">
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground" id="month-label">Mês de referência</label>
+            <div className="flex min-w-0 items-center gap-1">
+              <Button variant="outline" size="icon" className="shrink-0" title="Mês anterior" aria-label="Mês anterior" onClick={() => setMonth(addMonths(`${month}-01`, -1).slice(0, 7))}><ChevronLeft className="size-4" /></Button>
+              <Select value={month} onValueChange={setMonth}><SelectTrigger aria-labelledby="month-label" className="min-w-0 flex-1"><SelectValue /></SelectTrigger><SelectContent>{months.map((value) => <SelectItem key={value} value={value}>{formatMonth(parseISO(`${value}-01`))}</SelectItem>)}</SelectContent></Select>
+              <Button variant="outline" size="icon" className="shrink-0" title="Próximo mês" aria-label="Próximo mês" onClick={() => setMonth(addMonths(`${month}-01`, 1).slice(0, 7))}><ChevronRight className="size-4" /></Button>
+              {month !== currentMonthRef() && <Button variant="ghost" size="sm" onClick={() => setMonth(currentMonthRef())}>Atual</Button>}
             </div>
-            <p className="mt-2 text-2xl font-bold tabular-nums">{bloco.itens.length}</p>
-            <p className="text-sm font-medium opacity-90">{exibirValor(sum(bloco.itens))}</p>
           </div>
-        ))}
-      </section>
-
-      <section className="grid gap-3 sm:grid-cols-4">
-        <Resumo titulo="A pagar" valor={sum(aPagar)} icon={TrendingDown} oculto={oculto} />
-        <Resumo titulo="Pago" valor={sum(pago)} icon={Wallet} oculto={oculto} />
-        <Resumo titulo="Receitas" valor={sum(receitas)} icon={TrendingUp} oculto={oculto} />
-        <Resumo titulo="Saldo" valor={saldo} icon={Wallet} oculto={oculto} destaque />
-      </section>
-
-      <section className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Atenção agora</h2>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground" id="category-label">Categoria</label>
+            <Select value={category} onValueChange={setCategory} disabled={view === "saude"}><SelectTrigger aria-labelledby="category-label"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="todas">Todas as categorias</SelectItem><SelectItem value="sem">Sem categoria</SelectItem>{categories.map((item) => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}</SelectContent></Select>
           </div>
-          <div className="relative print:hidden">
-            <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              className="pl-9"
-              placeholder="Buscar por descrição ou categoria"
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-            />
-          </div>
-          {isLoading ? (
-            <p className="text-sm text-muted-foreground">Carregando...</p>
-          ) : (
-            <EntryList
-              entries={destaqueFiltrado}
-              empty={
-                busca.trim()
-                  ? "Nenhuma conta encontrada para esta busca."
-                  : "Tudo em dia por aqui. Nenhuma conta vencendo nos próximos 7 dias."
-              }
-              onEdit={(e) => {
-                setEmEdicao(e);
-                setDialogo(true);
-              }}
-            />
-          )}
         </div>
-
-        <div className="card-elevated p-5">
-          <h2 className="text-lg font-semibold">Despesas por categoria</h2>
-          {porCategoria.length === 0 ? (
-            <p className="mt-6 text-sm text-muted-foreground">Sem despesas neste mês.</p>
-          ) : (
-            <>
-              <div className="h-52">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={porCategoria} dataKey="value" nameKey="name" innerRadius={50} outerRadius={80}>
-                      {porCategoria.map((c) => (
-                        <Cell key={c.name} fill={c.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(v: number) => exibirValor(v)} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <ul className="mt-3 space-y-1 text-sm">
-                {porCategoria.slice(0, 6).map((c) => (
-                  <li key={c.name} className="flex items-center gap-2">
-                    <span className="size-2.5 rounded-full" style={{ backgroundColor: c.color }} />
-                    <span className="flex-1 truncate">{c.name}</span>
-                    <span className="tabular-nums text-muted-foreground">{exibirValor(c.value)}</span>
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-        </div>
+        <nav aria-label="Situação das contas" className="flex flex-wrap gap-2">
+          {views.map((item) => {
+            const count = item.value === "saude" ? monthEvents.length : panelEntries(monthEntries, item.value, today).length;
+            return <Button key={item.value} size="sm" variant={view === item.value ? "default" : "outline"} aria-pressed={view === item.value} onClick={() => setView(item.value)}><item.icon className="size-3.5" />{item.label}<span className="tabular-nums opacity-75">{count}</span></Button>;
+          })}
+        </nav>
       </section>
 
-      <EntryDialog open={dialogo} onOpenChange={setDialogo} entry={emEdicao} />
-      <SettingsDialog open={config} onOpenChange={setConfig} />
-    </div>
-  );
-}
+      <section aria-label="Totais do mês" className="grid grid-cols-2 gap-x-4 gap-y-4 border-b border-border pb-5 sm:grid-cols-3 xl:grid-cols-5">
+        {summaries.map((item) => <div key={item.label} className="min-w-0"><p className="flex items-center gap-1.5 text-xs text-muted-foreground"><item.icon className="size-3.5 shrink-0" />{item.label}</p><p className={cn("mt-1 break-words text-lg font-semibold tabular-nums", item.label === "Saldo final" && "text-primary")}>{money(item.amount)}</p></div>)}
+      </section>
 
-function Resumo({
-  titulo,
-  valor,
-  icon: Icon,
-  destaque,
-  oculto,
-}: {
-  titulo: string;
-  valor: number;
-  icon: typeof Wallet;
-  destaque?: boolean;
-  oculto?: boolean;
-}) {
-  return (
-    <div className={cn("card-elevated p-4", destaque && "bg-brand text-primary-foreground")}>
-      <div className="flex items-center gap-2 text-sm opacity-80">
-        <Icon className="size-4" />
-        {titulo}
-      </div>
-      <p className="mt-1 text-xl font-bold tabular-nums">{oculto ? "•••••" : formatBRL(valor)}</p>
+      <section className="min-w-0 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="text-base font-semibold">{views.find((item) => item.value === view)?.label} · {monthLabel}</h2><span className="text-xs text-muted-foreground">{view === "saude" ? healthList.length : list.length} registro(s)</span></div>
+        <div className="relative print:hidden"><Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input aria-label="Buscar contas ou saúde" className="pl-9" placeholder={view === "saude" ? "Buscar agendamento" : "Buscar conta ou categoria"} value={search} onChange={(event) => setSearch(event.target.value)} /></div>
+        {view === "saude" ? healthLoading ? <p className="text-sm text-muted-foreground">Carregando saúde...</p> : healthError ? <p role="alert" className="text-sm text-destructive">Não foi possível carregar os agendamentos.</p> : healthList.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">Nenhum agendamento neste mês para esta busca.</p> : <ul className="divide-y divide-border">{healthList.map((event) => <li key={event.id} className="flex flex-wrap items-center gap-3 py-3"><HeartPulse className="size-5 shrink-0 text-primary" /><div className="min-w-0 flex-1"><p className="break-words font-medium">{event.title}</p><p className="text-xs text-muted-foreground">{HEALTH_KIND_LABEL[event.kind]} · {formatDate(event.scheduled_date)}{event.scheduled_time ? ` às ${event.scheduled_time.slice(0, 5)}` : ""}{event.place_name ? ` · ${event.place_name}` : ""}</p><p className={cn("text-xs font-medium", event.done ? "text-success" : event.scheduled_date < today ? "text-destructive" : "text-muted-foreground")}>{event.done ? "Concluído" : event.scheduled_date === today ? "Hoje" : event.scheduled_date < today ? "Atrasado" : "Agendado"}</p></div><Button variant="ghost" size="icon" disabled={toggleHealth.isPending} aria-label={event.done ? "Reabrir agendamento" : "Concluir agendamento"} title={event.done ? "Reabrir agendamento" : "Concluir agendamento"} onClick={() => toggleHealth.mutate({ event, done: !event.done }, { onSuccess: () => toast.success("Agendamento atualizado."), onError: () => toast.error("Não foi possível atualizar o agendamento.") })}><Check className="size-4" /></Button><Button variant="ghost" size="icon" aria-label="Editar agendamento" title="Editar agendamento" onClick={() => { setEditingHealth(event); setHealthDialog(true); }}><Pencil className="size-4" /></Button></li>)}</ul> : isLoading ? <p className="text-sm text-muted-foreground">Carregando contas...</p> : error ? <p role="alert" className="text-sm text-destructive">Não foi possível carregar suas contas.</p> : <EntryList entries={list} hideValues={hidden} empty="Nenhuma conta neste mês para os filtros selecionados." onEdit={(entry) => { setEditing(entry); setDialog(true); }} />}
+        {view === "saude" && <Button variant="link" asChild><Link to="/saude">Abrir agenda de saúde</Link></Button>}
+        {view !== "saude" && daily.length > 0 && <Button variant="link" asChild><Link to="/diarias">Diárias e avulsas · {money(sum(daily))}</Link></Button>}
+      </section>
+      <EntryDialog open={dialog} onOpenChange={setDialog} entry={editing} />
+      <HealthDialog open={healthDialog} onOpenChange={setHealthDialog} event={editingHealth} />
     </div>
   );
 }

@@ -37,10 +37,12 @@ export function EntryList({
   entries,
   onEdit,
   empty = "Nenhum lançamento por aqui.",
+  hideValues = false,
 }: {
   entries: Entry[];
   onEdit: (entry: Entry) => void;
   empty?: string;
+  hideValues?: boolean;
 }) {
   const { data: categories } = useCategories();
   const alternarPago = useTogglePaid();
@@ -78,9 +80,11 @@ export function EntryList({
           return (
             <li
               key={entry.id}
-              className="card-elevated flex items-center gap-3 px-3 py-3 sm:px-4 print:border-none print:shadow-none print:border-b print:border-black print:rounded-none print:px-0 print:py-1 print:text-black print:bg-none"
+              className="card-elevated flex flex-wrap items-center gap-3 px-3 py-3 sm:px-4 print:border-none print:shadow-none print:border-b print:border-black print:rounded-none print:px-0 print:py-1 print:text-black print:bg-none"
             >
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 type="button"
                 aria-label={entry.status === "pago" ? "Marcar como pendente" : "Marcar como paga"}
                 onClick={() => {
@@ -103,9 +107,9 @@ export function EntryList({
                 ) : (
                   <Circle className="size-6" />
                 )}
-              </button>
+              </Button>
 
-              <div className="min-w-0 flex-1">
+              <div className="min-w-32 flex-1">
                 <p className="flex items-center gap-1.5 truncate font-medium">
                   <span className="truncate">{entry.description}</span>
                   {entry.is_recurring && (
@@ -148,8 +152,7 @@ export function EntryList({
                     entry.kind === "receita" ? "text-success" : "text-foreground",
                   )}
                 >
-                  {entry.kind === "receita" ? "+" : "-"}
-                  {formatBRL(entry.amount)}
+                  {hideValues ? "•••••" : `${entry.kind === "receita" ? "+" : "-"}${formatBRL(entry.amount)}`}
                 </p>
               </div>
 
