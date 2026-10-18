@@ -386,6 +386,31 @@ export function HealthDialog({ open, onOpenChange, event }: Props) {
             </div>
           </div>
 
+          <div className="sm:col-span-2">
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full"
+              disabled={!montarEndereco()}
+              onClick={() => {
+                const endereco = montarEndereco();
+                if (endereco) {
+                  window.open(
+                    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(endereco)}`,
+                    "_blank",
+                    "noopener,noreferrer",
+                  );
+                }
+              }}
+            >
+              <MapPin className="mr-2 size-4" />
+              Ver no mapa
+            </Button>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Abre o Google Maps com o endereço e CEP preenchidos acima.
+            </p>
+          </div>
+
           <div className="space-y-1.5 sm:col-span-2">
             <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-border/70 p-3 text-sm">
               <input
