@@ -90,6 +90,18 @@ export function HealthDialog({ open, onOpenChange, event }: Props) {
   const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
 
+  function montarEndereco() {
+    const partes = [
+      form.street.trim() && form.number.trim()
+        ? `${form.street.trim()}, ${form.number.trim()}`
+        : form.street.trim(),
+      form.district.trim(),
+      form.city.trim() && form.state.trim() ? `${form.city.trim()} - ${form.state.trim()}` : form.city.trim(),
+      form.cep.trim(),
+    ].filter(Boolean);
+    return partes.join(", ");
+  }
+
   async function preencherPorCep(cep: string) {
     if (cep.replace(/\D/g, "").length !== 8) return;
     setBuscando(true);
