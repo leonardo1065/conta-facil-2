@@ -12,3 +12,4 @@
 - [x] Organizar os botões de navegação na lateral e despoluir a página inicial, sem alterar dados cadastrados
 - [x] Retirar valores rápidos das diárias e mostrar histórico dos valores com data de inclusão, preservando totais e registros existentes
 - [x] Organizar o painel por mês, categoria e situação, reunindo contas recorrentes e saúde sem alterar dados
+- [x] Mostrar salário e outras entradas como receitas do mês no demonstrativo mensal, sem alterar registros
