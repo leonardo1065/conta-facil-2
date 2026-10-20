@@ -28,6 +28,7 @@ export const Route = createFileRoute("/_authenticated/painel")({
 
 const views = [
   { value: "todos", label: "Contas do mês", icon: List },
+  { value: "receitas", label: "Receitas do mês", icon: TrendingUp },
   { value: "recorrentes", label: "Recorrentes", icon: Repeat },
   { value: "pendentes", label: "Pendentes", icon: CalendarClock },
   { value: "hoje", label: "Vence hoje", icon: Sun },
@@ -77,14 +78,14 @@ function Painel() {
   const healthList = monthEvents.filter((event) => !query || `${event.title} ${event.place_name ?? ""} ${HEALTH_KIND_LABEL[event.kind]}`.toLocaleLowerCase("pt-BR").includes(query));
   const pending = monthEntries.filter((entry) => entry.kind === "despesa" && !entry.is_avulsa && entry.status === "pendente");
   const paid = monthEntries.filter((entry) => entry.kind === "despesa" && entry.status === "pago");
-  const income = monthEntries.filter((entry) => entry.kind === "receita");
+  const income = panelEntries(monthEntries, "receitas", today);
   const daily = monthEntries.filter((entry) => entry.kind === "despesa" && entry.is_avulsa);
   const balance = sum(income) - sum(monthEntries.filter((entry) => entry.kind === "despesa"));
   const summaries = [
     { label: "A pagar", amount: sum(pending), icon: TrendingDown },
     { label: "Pago", amount: sum(paid), icon: CheckCircle2 },
     { label: "Diárias / avulsas", amount: sum(daily), icon: Wallet },
-    { label: "Receitas", amount: sum(income), icon: TrendingUp },
+    { label: "Receitas do mês", amount: sum(income), icon: TrendingUp },
     { label: "Saldo final", amount: balance, icon: Wallet },
   ];
 

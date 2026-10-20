@@ -7,6 +7,22 @@ import type { HealthEvent } from "./health";
 const entry = (overrides: Partial<Entry> = {}): Entry => ({ id: "oct", user_id: "owner", description: "Luz", amount: 100, due_date: "2026-10-18", category_id: "casa", kind: "despesa", status: "pendente", paid_at: null, notes: null, attachment_path: null, barcode: null, series_id: "series", is_recurring: true, recurrence_interval_months: 1, recurrence_unit: "mes", installment_no: null, installment_total: null, is_avulsa: false, daily_archived: false, month_ref: null, ...overrides });
 
 describe("gestão mensal do painel", () => {
+  test("salário e outras entradas aparecem como receitas do mês, recebidas ou a receber", () => {
+    const rows = [
+      entry({ id: "salario", description: "Salário", kind: "receita", amount: 3000, status: "pago" }),
+      entry({ id: "entrada", description: "Outras entradas", kind: "receita", amount: 200, is_avulsa: true }),
+      entry({ id: "receita", description: "Receitas", kind: "receita", amount: 100 }),
+      entry({ id: "novembro", kind: "receita", amount: 500, due_date: "2026-11-05" }),
+      entry(),
+    ];
+    const original = structuredClone(rows);
+    const october = monthlyEntries(rows, "2026-10");
+    const income = panelEntries(october, "receitas", "2026-10-20");
+    assert.deepEqual(income.map((row) => row.id), ["salario", "entrada", "receita"]);
+    assert.equal(income.reduce((total, row) => total + row.amount, 0), 3300);
+    assert.deepEqual(panelEntries(october, "todos", "2026-10-20").map((row) => row.id), ["salario", "entrada", "receita", "oct"]);
+    assert.deepEqual(rows, original);
+  });
   test("outubro e novembro mostram somente contas cadastradas no mês escolhido", () => {
     const rows = [entry(), entry({ id: "nov", due_date: "2026-11-01" })];
     assert.deepEqual(monthlyEntries(rows, "2026-10").map((row) => row.id), ["oct"]);
