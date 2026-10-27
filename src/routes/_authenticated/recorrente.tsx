@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DateField } from "@/components/DateField";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MoneyInput } from "@/components/MoneyInput";
+import { formatValorBR, parseValorBR } from "@/lib/money";
 import { EntryList } from "@/components/EntryList";
 import { currentMonthRef, monthRef, todayISO } from "@/lib/dates";
 import {
@@ -64,7 +66,7 @@ function Recorrente() {
     if (!emEdicao) return;
     setForm({
       description: emEdicao.description,
-      amount: String(emEdicao.amount),
+      amount: formatValorBR(emEdicao.amount),
       due_date: emEdicao.due_date,
       category_id: emEdicao.category_id ?? "",
       kind: emEdicao.kind,
@@ -119,7 +121,7 @@ function Recorrente() {
 
   async function submeter(e: React.FormEvent) {
     e.preventDefault();
-    const valor = Number(String(form.amount).replace(",", "."));
+    const valor = parseValorBR(String(form.amount));
     if (!form.description.trim()) return toast.error("Informe a descrição.");
     if (!Number.isFinite(valor) || valor < 0) return toast.error("Informe um valor válido.");
     if (repeticao === "prestacoes" && (!Number.isFinite(parcelas) || parcelas < 1))
@@ -207,12 +209,10 @@ function Recorrente() {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="rec-valor">Valor (R$)</Label>
-              <Input
+              <MoneyInput
                 id="rec-valor"
-                inputMode="decimal"
                 value={form.amount}
-                onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                placeholder="0,00"
+                onChange={(valor) => setForm({ ...form, amount: valor })}
               />
             </div>
             <div className="space-y-2">
