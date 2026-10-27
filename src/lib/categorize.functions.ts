@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { z } from "zod";
 
 export type SugestaoCategoria = {
   kind: "despesa" | "receita";
@@ -27,7 +28,7 @@ export const sugerirCategoria = createServerFn({ method: "POST" })
 
     const { createOpenAI } = await import("@ai-sdk/openai");
     const { streamText, Output } = await import("ai");
-    const { z } = await import("zod");
+
 
     const provider = createOpenAI({
       baseURL: "https://ai.gateway.lovable.dev/v1",
