@@ -17,6 +17,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScannerDialog } from "./ScannerDialog";
 import { todayISO } from "@/lib/dates";
+import { formatValorBR, parseValorBR } from "@/lib/money";
+import { MoneyInput } from "@/components/MoneyInput";
 import { useCategories, useSaveEntry, type Entry, type EntryKind, type EntryStatus, type Recurrence } from "@/lib/finance";
 
 type Props = {
@@ -68,7 +70,7 @@ export function EntryDialog({ open, onOpenChange, entry, defaultDate }: Props) {
     if (entry) {
       setForm({
         description: entry.description,
-        amount: String(entry.amount),
+        amount: formatValorBR(entry.amount),
         due_date: entry.due_date,
         category_id: entry.category_id ?? "",
         kind: entry.kind,
@@ -100,7 +102,7 @@ export function EntryDialog({ open, onOpenChange, entry, defaultDate }: Props) {
 
   async function submeter(e: React.FormEvent) {
     e.preventDefault();
-    const valor = Number(form.amount.replace(",", "."));
+    const valor = parseValorBR(form.amount);
     if (!form.description.trim()) return toast.error("Informe a descrição.");
     if (!Number.isFinite(valor) || valor < 0) return toast.error("Informe um valor válido.");
 
@@ -188,12 +190,10 @@ export function EntryDialog({ open, onOpenChange, entry, defaultDate }: Props) {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label htmlFor="valor">Valor (R$)</Label>
-                <Input
+                <MoneyInput
                   id="valor"
-                  inputMode="decimal"
                   value={form.amount}
-                  onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                  placeholder="0,00"
+                  onChange={(valor) => setForm({ ...form, amount: valor })}
                 />
               </div>
               <div className="space-y-2">
@@ -480,7 +480,7 @@ export function EntryDialog({ open, onOpenChange, entry, defaultDate }: Props) {
           setForm((prev) => ({
             ...prev,
             barcode: res.raw,
-            amount: valorDetectado ? valorDetectado.toFixed(2).replace(".", ",") : prev.amount,
+            amount: valorDetectado ? formatValorBR(valorDetectado) : prev.amount,
             due_date: dataDetectada ?? prev.due_date,
             description:
               !prev.description.trim() && res.kind === "pix" && res.recipient
