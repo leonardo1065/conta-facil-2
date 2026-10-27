@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { Paperclip, ScanLine } from "lucide-react";
+import { Paperclip, ScanLine, Sparkles } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { sugerirCategoria } from "@/lib/categorize.functions";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -42,6 +44,8 @@ const emptyForm = (date: string) => ({
 
 export function EntryDialog({ open, onOpenChange, entry, defaultDate }: Props) {
   const { data: categories } = useCategories();
+  const sugerir = useServerFn(sugerirCategoria);
+  const [sugerindo, setSugerindo] = useState(false);
   const salvar = useSaveEntry();
   const [form, setForm] = useState(emptyForm(defaultDate ?? todayISO()));
   const [recorrencia, setRecorrencia] = useState<Recurrence>({
@@ -179,12 +183,36 @@ export function EntryDialog({ open, onOpenChange, entry, defaultDate }: Props) {
 
             <div className="space-y-2">
               <Label htmlFor="descricao">Descrição</Label>
-              <Input
-                id="descricao"
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                placeholder="Conta de luz de julho"
-              />
+              <div className="flex gap-2">
+                <Input
+                  id="descricao"
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  placeholder="Conta de luz de julho"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="shrink-0 gap-1"
+                  disabled={sugerindo || form.description.trim().length < 2}
+                  onClick={async () => {
+                    setSugerindo(true);
+                    try {
+                      const s = await sugerir({ data: { description: form.description } });
+                      setForm((f) => ({ ...f, kind: s.kind, category_id: s.category_id ?? "" }));
+                      toast.success(
+                        `${s.kind === "receita" ? "Receita" : "Despesa"}${s.category_name ? ` · ${s.category_name}` : " · nenhuma categoria adequada"}`,
+                      );
+                    } catch (e) {
+                      toast.error(e instanceof Error ? e.message : "Não foi possível sugerir.");
+                    } finally {
+                      setSugerindo(false);
+                    }
+                  }}
+                >
+                  <Sparkles className="size-4" /> {sugerindo ? "..." : "Sugerir"}
+                </Button>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
