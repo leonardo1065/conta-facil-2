@@ -44,6 +44,8 @@ const emptyForm = (date: string) => ({
 
 export function EntryDialog({ open, onOpenChange, entry, defaultDate }: Props) {
   const { data: categories } = useCategories();
+  const sugerir = useServerFn(sugerirCategoria);
+  const [sugerindo, setSugerindo] = useState(false);
   const salvar = useSaveEntry();
   const [form, setForm] = useState(emptyForm(defaultDate ?? todayISO()));
   const [recorrencia, setRecorrencia] = useState<Recurrence>({
