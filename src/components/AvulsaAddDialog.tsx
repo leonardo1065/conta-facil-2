@@ -9,8 +9,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MoneyInput } from "@/components/MoneyInput";
+import { parseValorBR } from "@/lib/money";
 import { currentMonthRef, formatBRL } from "@/lib/dates";
 import { useAddToAvulsa, type Entry } from "@/lib/finance";
 
@@ -33,7 +34,7 @@ export function AvulsaAddDialog({
 
   async function confirmar() {
     if (!entry) return;
-    const v = Number(valor.replace(",", "."));
+    const v = parseValorBR(valor);
     if (!Number.isFinite(v) || v <= 0) {
       toast.error("Informe um valor válido.");
       return;
@@ -67,13 +68,11 @@ export function AvulsaAddDialog({
           </p>
           <div className="space-y-2">
             <Label htmlFor="valor-avulso">Valor a somar (R$)</Label>
-            <Input
+            <MoneyInput
               id="valor-avulso"
-              inputMode="decimal"
               autoFocus
               value={valor}
-              placeholder="0,00"
-              onChange={(e) => setValor(e.target.value)}
+              onChange={setValor}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
