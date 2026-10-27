@@ -25,6 +25,14 @@ export function MoneyInput({
       autoFocus={autoFocus}
       onChange={(e) => onChange(e.target.value)}
       onKeyDown={onKeyDown}
+      onFocus={(e) => {
+        // Valor zerado: limpa para digitar direto; outro valor: seleciona para substituir.
+        if (parseValorBR(value) === 0) onChange("");
+        else {
+          const alvo = e.currentTarget;
+          requestAnimationFrame(() => alvo.select());
+        }
+      }}
       onBlur={() => {
         const numero = parseValorBR(value);
         if (Number.isFinite(numero)) onChange(formatValorBR(numero));
