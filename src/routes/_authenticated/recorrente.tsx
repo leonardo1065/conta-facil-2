@@ -66,7 +66,7 @@ function Recorrente() {
     if (!emEdicao) return;
     setForm({
       description: emEdicao.description,
-      amount: String(emEdicao.amount),
+      amount: formatValorBR(emEdicao.amount),
       due_date: emEdicao.due_date,
       category_id: emEdicao.category_id ?? "",
       kind: emEdicao.kind,
