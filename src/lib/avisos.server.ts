@@ -248,7 +248,8 @@ export async function montarResumoVencimento(
     .select("description, amount, due_date")
     .eq("user_id", perfil.id)
     .eq("kind", "despesa")
-    .eq("status", "pendente");
+    .eq("status", "pendente")
+    .eq("is_avulsa", false);
 
   const { data, error } =
     quando === "vencidas"
