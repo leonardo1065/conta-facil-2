@@ -113,9 +113,9 @@ function Calendario() {
             const itens = porDia.get(data) ?? [];
             const previstas = previsoesPorDia.get(data) ?? [];
             const temVencida = itens.some(
-              (e) => e.kind === "despesa" && e.status === "pendente" && data < hoje,
+              (e) => e.kind === "despesa" && !e.is_avulsa && e.status === "pendente" && data < hoje,
             );
-            const temPendente = itens.some((e) => e.kind === "despesa" && e.status === "pendente");
+            const temPendente = itens.some((e) => e.kind === "despesa" && !e.is_avulsa && e.status === "pendente");
             const cor = temVencida
               ? "bg-destructive"
               : data === hoje && temPendente

@@ -28,6 +28,8 @@ export function statusInfo(entry: Entry) {
     };
   const delta = diffDays(todayISO(), entry.due_date);
   if (entry.kind === "receita") return { label: "A receber", tone: "text-info", dot: "bg-info" };
+  // Diárias apenas somam no mês; não são contas a vencer.
+  if (entry.is_avulsa) return { label: "Diária do mês", tone: "text-muted-foreground", dot: "bg-muted-foreground" };
   if (delta < 0) return { label: `Vencida há ${Math.abs(delta)}d`, tone: "text-destructive", dot: "bg-destructive" };
   if (delta === 0) return { label: "Vence hoje", tone: "text-warning", dot: "bg-warning" };
   return { label: `Em ${delta} dia(s)`, tone: "text-muted-foreground", dot: "bg-muted-foreground" };
