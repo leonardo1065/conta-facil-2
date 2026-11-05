@@ -80,7 +80,7 @@ function Painel() {
   const paid = monthEntries.filter((entry) => entry.kind === "despesa" && entry.status === "pago");
   const income = panelEntries(monthEntries, "receitas", today);
   const daily = monthEntries.filter((entry) => entry.kind === "despesa" && entry.is_avulsa);
-  const balance = sum(income) - sum(monthEntries.filter((entry) => entry.kind === "despesa"));
+  const balance = sum(income) - (sum(paid) + sum(daily));
   const summaries = [
     { label: "A pagar", amount: sum(pending), icon: TrendingDown },
     { label: "Pago", amount: sum(paid), icon: CheckCircle2 },
