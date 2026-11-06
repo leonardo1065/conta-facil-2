@@ -23,6 +23,17 @@ export function panelEntries(entries: Entry[], view: PanelView, today: string) {
   });
 }
 
+export function monthlySummary(entries: Entry[], today: string) {
+  const total = (rows: Entry[]) => rows.reduce((acc, row) => acc + row.amount, 0);
+  const expenses = entries.filter((entry) => entry.kind === "despesa");
+  const daily = total(expenses.filter((entry) => entry.is_avulsa));
+  const paid = total(expenses.filter((entry) => !entry.is_avulsa && entry.status === "pago"));
+  const remaining = total(expenses.filter((entry) => !entry.is_avulsa && entry.status === "pendente"));
+  const toPay = total(expenses);
+  const income = total(panelEntries(entries, "receitas", today).filter((entry) => entry.status === "pago"));
+  return { toPay, paid, daily, income, balance: toPay - income, remaining };
+}
+
 export function monthlyHealth(events: HealthEvent[], month: string) {
   return events.filter((event) => event.scheduled_date.slice(0, 7) === month);
 }

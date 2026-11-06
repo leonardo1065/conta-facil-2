@@ -12,7 +12,7 @@ import { sum } from "@/lib/dueBuckets";
 import { addMonths, currentMonthRef, formatBRL, formatDate, formatMonth, parseISO, todayISO } from "@/lib/dates";
 import { useCategories, useEntries, type Entry } from "@/lib/finance";
 import { HEALTH_KIND_LABEL, useHealthEvents, useToggleHealthDone, type HealthEvent } from "@/lib/health";
-import { monthlyEntries, monthlyHealth, panelEntries, type PanelView } from "@/lib/monthly-panel";
+import { monthlyEntries, monthlyHealth, monthlySummary, panelEntries, type PanelView } from "@/lib/monthly-panel";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/painel")({
@@ -76,18 +76,15 @@ function Painel() {
   const query = search.trim().toLocaleLowerCase("pt-BR");
   const list = panelEntries(monthEntries, view, today).filter((entry) => !query || entry.description.toLocaleLowerCase("pt-BR").includes(query) || categories.find((item) => item.id === entry.category_id)?.name.toLocaleLowerCase("pt-BR").includes(query));
   const healthList = monthEvents.filter((event) => !query || `${event.title} ${event.place_name ?? ""} ${HEALTH_KIND_LABEL[event.kind]}`.toLocaleLowerCase("pt-BR").includes(query));
-  const pending = monthEntries.filter((entry) => entry.kind === "despesa" && !entry.is_avulsa && entry.status === "pendente");
-  const paid = monthEntries.filter((entry) => entry.kind === "despesa" && entry.status === "pago");
-  const income = panelEntries(monthEntries, "receitas", today);
-  const receivedIncome = income.filter((entry) => entry.status === "pago");
   const daily = monthEntries.filter((entry) => entry.kind === "despesa" && entry.is_avulsa);
-  const balance = sum(income) - (sum(paid) + sum(daily));
+  const totals = monthlySummary(monthEntries, today);
   const summaries = [
-    { label: "A pagar", amount: sum(pending), icon: TrendingDown },
-    { label: "Pago", amount: sum(paid), icon: CheckCircle2 },
-    { label: "Diárias / avulsas", amount: sum(daily), icon: Wallet },
-    { label: "Receitas do mês", amount: sum(receivedIncome), icon: TrendingUp },
-    { label: "Saldo final", amount: balance, icon: Wallet },
+    { label: "A pagar", amount: totals.toPay, icon: TrendingDown },
+    { label: "Pago", amount: totals.paid, icon: CheckCircle2 },
+    { label: "Diárias pagas", amount: totals.daily, icon: Wallet },
+    { label: "Receitas do mês", amount: totals.income, icon: TrendingUp },
+    { label: "Saldo final", amount: totals.balance, icon: Wallet },
+    { label: "Contas restantes a pagar", amount: totals.remaining, icon: CalendarClock },
   ];
 
   return (
@@ -124,7 +121,7 @@ function Painel() {
         </nav>
       </section>
 
-      <section aria-label="Totais do mês" className="grid grid-cols-2 gap-x-4 gap-y-4 border-b border-border pb-5 sm:grid-cols-3 xl:grid-cols-5">
+      <section aria-label="Totais do mês" className="grid grid-cols-2 gap-x-4 gap-y-4 border-b border-border pb-5 sm:grid-cols-3 xl:grid-cols-6">
         {summaries.map((item) => <div key={item.label} className="min-w-0"><p className="flex items-center gap-1.5 text-xs text-muted-foreground"><item.icon className="size-3.5 shrink-0" />{item.label}</p><p className={cn("mt-1 break-words text-lg font-semibold tabular-nums", item.label === "Saldo final" && "text-primary")}>{money(item.amount)}</p></div>)}
       </section>
 

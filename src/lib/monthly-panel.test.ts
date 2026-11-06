@@ -1,6 +1,6 @@
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
-import { monthlyEntries, monthlyHealth, panelEntries } from "./monthly-panel";
+import { monthlyEntries, monthlyHealth, monthlySummary, panelEntries } from "./monthly-panel";
 import type { Entry } from "./finance";
 import type { HealthEvent } from "./health";
 
@@ -51,6 +51,23 @@ describe("gestão mensal do painel", () => {
     assert.equal(rows.reduce((total, row) => total + row.amount, 0), 35);
     assert.equal(panelEntries(rows, "pendentes", "2026-11-01").length, 0);
     assert.equal(panelEntries(rows, "vencidos", "2026-11-01").length, 0);
+  });
+  test("cartões do mês somam despesas, pagos, diárias, receitas, saldo e restantes", () => {
+    const rows = [
+      entry({ id: "p1", amount: 100, status: "pago" }),
+      entry({ id: "p2", amount: 50 }),
+      entry({ id: "d1", amount: 30, is_avulsa: true }),
+      entry({ id: "r1", kind: "receita", amount: 1000, status: "pago" }),
+      entry({ id: "r2", kind: "receita", amount: 200 }),
+      entry({ id: "nov", amount: 999, due_date: "2026-11-02" }),
+    ];
+    const s = monthlySummary(monthlyEntries(rows, "2026-10"), "2026-10-20");
+    assert.equal(s.toPay, 180);
+    assert.equal(s.paid, 100);
+    assert.equal(s.daily, 30);
+    assert.equal(s.income, 1000);
+    assert.equal(s.balance, 180 - 1000);
+    assert.equal(s.remaining, 50);
   });
   test("saúde acompanha o mês escolhido", () => {
     const rows = [{ id: "oct", scheduled_date: "2026-10-18" }, { id: "nov", scheduled_date: "2026-11-02" }] as HealthEvent[];
