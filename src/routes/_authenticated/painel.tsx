@@ -79,13 +79,14 @@ function Painel() {
   const pending = monthEntries.filter((entry) => entry.kind === "despesa" && !entry.is_avulsa && entry.status === "pendente");
   const paid = monthEntries.filter((entry) => entry.kind === "despesa" && entry.status === "pago");
   const income = panelEntries(monthEntries, "receitas", today);
+  const receivedIncome = income.filter((entry) => entry.status === "pago");
   const daily = monthEntries.filter((entry) => entry.kind === "despesa" && entry.is_avulsa);
   const balance = sum(income) - (sum(paid) + sum(daily));
   const summaries = [
     { label: "A pagar", amount: sum(pending), icon: TrendingDown },
     { label: "Pago", amount: sum(paid), icon: CheckCircle2 },
     { label: "Diárias / avulsas", amount: sum(daily), icon: Wallet },
-    { label: "Receitas do mês", amount: sum(income), icon: TrendingUp },
+    { label: "Receitas do mês", amount: sum(receivedIncome), icon: TrendingUp },
     { label: "Saldo final", amount: balance, icon: Wallet },
   ];
 
