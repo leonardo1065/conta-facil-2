@@ -12,12 +12,14 @@ export type ParsedDocument = {
 };
 
 const BOLETO_BASE_DATE = "1997-10-07"; // fator de vencimento base FEBRABAN
-const BOLETO_RESET_BASE_DATE = "2022-05-29"; // fator 1000 voltou a valer em 22/02/2025
+const BOLETO_RESET_BASE_DATE = "2025-02-22"; // fator 1000 voltou a valer em 22/02/2025
 
-/** Fator de vencimento simples: base + nº de dias */
+/** Converte o fator de vencimento bancário, incluindo o reinício de 2025. */
 function dataDoFator(factor: number): string | undefined {
   if (!factor || factor < 1000) return undefined;
-  return addDays(factor <= 1999 ? BOLETO_RESET_BASE_DATE : BOLETO_BASE_DATE, factor);
+  return factor <= 1999
+    ? addDays(BOLETO_RESET_BASE_DATE, factor - 1000)
+    : addDays(BOLETO_BASE_DATE, factor);
 }
 
 /** Boleto de arrecadação / conta de consumo (começa com 8) */
@@ -28,15 +30,33 @@ function parseArrecadacao(digits: string): ParsedDocument | null {
       : digits;
   if (barcode.length !== 44 || barcode[0] !== "8") return null;
 
-  const bruto = Number(barcode.slice(4, 15));
+  // Os indicadores 6 e 8 representam valor efetivo em reais. 7 e 9 indicam
+  // referência/quantidade, portanto o campo não pode ser tratado como valor.
+  const hasEffectiveAmount = barcode[2] === "6" || barcode[2] === "8";
+  const bruto = hasEffectiveAmount ? Number(barcode.slice(4, 15)) : 0;
   const amount = bruto > 0 ? bruto / 100 : undefined;
 
-  // Concessionárias (código 8): fator de vencimento nas posições 19-23 do código de barras.
-  // Base igual ao boleto comum (2022-05-22, fator volta a 1000).
-  const factor = Number(barcode.slice(5, 9));
-  const dueDate = dataDoFator(factor);
+  // Quando informada pela concessionária, a data AAAAMMDD ocupa os 8
+  // primeiros dígitos do campo livre (posições 20–27). Não há fator FEBRABAN.
+  const dueDate = parseCompactDate(barcode.slice(19, 27));
 
   return { kind: "boleto", amount, dueDate, raw: digits };
+}
+
+function parseCompactDate(value: string): string | undefined {
+  if (!/^\d{8}$/.test(value)) return undefined;
+  const year = Number(value.slice(0, 4));
+  const month = Number(value.slice(4, 6));
+  const day = Number(value.slice(6, 8));
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return undefined;
+  }
+  return `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6, 8)}`;
 }
 
 function normalizeAmount(value: unknown): number | undefined {
