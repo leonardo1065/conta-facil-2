@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { HealthDialog } from "@/components/HealthDialog";
 import { NowCard } from "@/components/NowCard";
-import { formatDate, todayISO } from "@/lib/dates";
+import { addDays, formatDate, monthRange, todayISO } from "@/lib/dates";
 import {
   formatHealthAddress,
   HEALTH_KIND_LABEL,
@@ -60,6 +60,15 @@ export const Route = createFileRoute("/_authenticated/saude")({
   component: Saude,
 });
 
+type PeriodoAgenda = "hoje" | "semana" | "quinze-dias" | "proximo-mes";
+
+const periodosAgenda: { value: PeriodoAgenda; label: string }[] = [
+  { value: "hoje", label: "Hoje" },
+  { value: "semana", label: "Próxima semana" },
+  { value: "quinze-dias", label: "Próximos 15 dias" },
+  { value: "proximo-mes", label: "Próximo mês" },
+];
+
 const iconePorTipo = {
   consulta: Stethoscope,
   exame: TestTube,
@@ -73,15 +82,31 @@ function Saude() {
   const [dialogo, setDialogo] = useState(false);
   const [emEdicao, setEmEdicao] = useState<HealthEvent | null>(null);
   const [paraExcluir, setParaExcluir] = useState<HealthEvent | null>(null);
+  const [periodo, setPeriodo] = useState<PeriodoAgenda>("hoje");
 
   const hoje = todayISO();
+  const intervalo = useMemo(() => {
+    if (periodo === "hoje") return { inicio: hoje, fim: hoje };
+    if (periodo === "semana") return { inicio: hoje, fim: addDays(hoje, 6) };
+    if (periodo === "quinze-dias") return { inicio: hoje, fim: addDays(hoje, 14) };
+
+    const [ano, mes] = hoje.split("-").map(Number);
+    const proximoMes = monthRange(ano!, mes!);
+    return { inicio: proximoMes.start, fim: proximoMes.end };
+  }, [hoje, periodo]);
+
   const { proximos, passados } = useMemo(() => {
     const lista = eventos ?? [];
     return {
-      proximos: lista.filter((e) => !e.done && e.scheduled_date >= hoje),
+      proximos: lista.filter(
+        (e) =>
+          !e.done &&
+          e.scheduled_date >= intervalo.inicio &&
+          e.scheduled_date <= intervalo.fim,
+      ),
       passados: lista.filter((e) => e.done || e.scheduled_date < hoje),
     };
-  }, [eventos, hoje]);
+  }, [eventos, hoje, intervalo]);
 
   return (
     <div className="space-y-6">
@@ -117,9 +142,28 @@ function Saude() {
       ) : (
         <>
           <section className="space-y-3">
-            <h2 className="text-lg font-semibold">Agendados</h2>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold">Agendados</h2>
+              <div
+                className="flex flex-wrap gap-2"
+                role="group"
+                aria-label="Filtrar agendamentos por período"
+              >
+                {periodosAgenda.map((opcao) => (
+                  <Button
+                    key={opcao.value}
+                    size="sm"
+                    variant={periodo === opcao.value ? "default" : "outline"}
+                    aria-pressed={periodo === opcao.value}
+                    onClick={() => setPeriodo(opcao.value)}
+                  >
+                    {opcao.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
             {proximos.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhum agendamento futuro.</p>
+              <p className="text-sm text-muted-foreground">Nenhum agendamento neste período.</p>
             ) : (
               proximos.map((e) => (
                 <Cartao
