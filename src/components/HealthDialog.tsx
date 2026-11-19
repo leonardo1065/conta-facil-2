@@ -201,7 +201,7 @@ export function HealthDialog({ open, onOpenChange, event }: Props) {
       toast.error("Informe uma quantidade de sessões válida (mínimo 1)");
       return;
     }
-    if (form.kind === "terapia" && form.session_total > 1 && form.session_skip_days.length === 7) {
+    if (form.kind === "terapia" && form.session_total > 1 && (form.session_skip_days ?? [0, 6]).length === 7) {
       toast.error("Deixe pelo menos um dia da semana disponível para as sessões");
       return;
     }
@@ -209,7 +209,7 @@ export function HealthDialog({ open, onOpenChange, event }: Props) {
       await salvar.mutateAsync({
         id: event?.id,
         event,
-        skippedWeekdays: form.session_skip_days,
+        skippedWeekdays: (form.session_skip_days ?? [0, 6]),
         values: {
           kind: form.kind,
           title: form.title.trim(),
@@ -308,10 +308,10 @@ export function HealthDialog({ open, onOpenChange, event }: Props) {
                       <input
                         type="checkbox"
                         className="h-4 w-4 accent-primary"
-                        checked={form.session_skip_days.includes(value)}
+                        checked={(form.session_skip_days ?? [0, 6]).includes(value)}
                         onChange={(e) => set("session_skip_days", e.target.checked
-                          ? [...form.session_skip_days, value].sort()
-                          : form.session_skip_days.filter((day) => day !== value))}
+                          ? [...(form.session_skip_days ?? [0, 6]), value].sort()
+                          : (form.session_skip_days ?? [0, 6]).filter((day) => day !== value))}
                       />
                       {label}
                     </label>
