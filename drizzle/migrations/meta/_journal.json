@@ -29,6 +29,20 @@
       "when": 1792238640548,
       "tag": "0003_daily_value_history",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795111696951,
+      "tag": "0004_add_therapy_sessions",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795111712651,
+      "tag": "0005_allow_custom_therapy_session_counts",
+      "breakpoints": true
     }
   ]
 }
