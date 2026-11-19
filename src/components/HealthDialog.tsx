@@ -69,6 +69,15 @@ const DIAS_SEMANA = [
   { value: 6, label: "Sábado" },
 ];
 
+function mensagemDeErro(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (error && typeof error === "object" && "message" in error && typeof error.message === "string") {
+    const details = "details" in error && typeof error.details === "string" ? error.details : "";
+    return [error.message, details].filter(Boolean).join(" — ");
+  }
+  return "Não foi possível salvar o agendamento";
+}
+
 export function HealthDialog({ open, onOpenChange, event }: Props) {
   const salvar = useSaveHealthEvent();
   const [form, setForm] = useState(vazio(todayISO()));
@@ -232,7 +241,7 @@ export function HealthDialog({ open, onOpenChange, event }: Props) {
         : event ? "Agendamento atualizado" : form.kind === "terapia" ? `${form.session_total} sessões de terapia agendadas` : "Agendamento salvo");
       onOpenChange(false);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Não foi possível salvar");
+      toast.error(mensagemDeErro(e));
     }
   }
 
