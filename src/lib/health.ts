@@ -1,8 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { addMonths } from "@/lib/dates";
+import { addDays, addMonths } from "@/lib/dates";
 
-export type HealthKind = "consulta" | "exame" | "remedio";
+export type HealthKind = "consulta" | "exame" | "remedio" | "terapia";
+export type TherapyType = "acupuntura" | "fisioterapia";
+export type TherapyFrequency = "diaria" | "semanal";
 export type PlaceType = "clinica" | "hospital" | "farmacia" | "posto" | "laboratorio" | "outro";
 
 export type HealthEvent = {
@@ -27,12 +29,27 @@ export type HealthEvent = {
   is_recurring: boolean;
   recurrence_interval_months: number;
   series_id: string | null;
+  therapy_type: TherapyType | null;
+  session_frequency: TherapyFrequency | null;
+  session_number: number | null;
+  session_total: number | null;
 };
 
 export const HEALTH_KIND_LABEL: Record<HealthKind, string> = {
   consulta: "Consulta",
   exame: "Exame",
   remedio: "Retirada de remédio",
+  terapia: "Terapia",
+};
+
+export const THERAPY_TYPE_LABEL: Record<TherapyType, string> = {
+  acupuntura: "Acupuntura",
+  fisioterapia: "Fisioterapia",
+};
+
+export const THERAPY_FREQUENCY_LABEL: Record<TherapyFrequency, string> = {
+  diaria: "Diária",
+  semanal: "Semanal",
 };
 
 export const PLACE_LABEL: Record<PlaceType, string> = {
@@ -141,7 +158,20 @@ export function useSaveHealthEvent() {
       const { data: userData } = await supabase.auth.getUser();
       const userId = userData.user?.id;
       if (!userId) throw new Error("Sessão expirada");
-      const { error } = await supabase.from("health_events").insert({ ...values, user_id: userId });
+      const sessionTotal = values.kind === "terapia" ? values.session_total ?? 10 : 1;
+      const seriesId = values.kind === "terapia" ? crypto.randomUUID() : values.series_id;
+      const sessions = Array.from({ length: sessionTotal }, (_, index) => ({
+        ...values,
+        user_id: userId,
+        series_id: seriesId,
+        session_number: values.kind === "terapia" ? index + 1 : null,
+        session_total: values.kind === "terapia" ? sessionTotal : null,
+        scheduled_date:
+          values.kind === "terapia" && index > 0
+            ? addDays(values.scheduled_date, index * (values.session_frequency === "semanal" ? 7 : 1))
+            : values.scheduled_date,
+      }));
+      const { error } = await supabase.from("health_events").insert(sessions);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["health_events"] }),
@@ -191,6 +221,10 @@ export function useToggleHealthDone() {
         is_recurring: true,
         recurrence_interval_months: event.recurrence_interval_months,
         series_id: seriesId,
+        therapy_type: event.therapy_type,
+        session_frequency: event.session_frequency,
+        session_number: event.session_number,
+        session_total: event.session_total,
       });
       if (insertError) throw insertError;
       return true;

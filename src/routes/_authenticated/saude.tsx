@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
+  Activity,
   CalendarClock,
   Check,
   HeartPulse,
@@ -31,6 +32,8 @@ import { addDays, formatDate, monthRange, todayISO } from "@/lib/dates";
 import {
   formatHealthAddress,
   HEALTH_KIND_LABEL,
+  THERAPY_FREQUENCY_LABEL,
+  THERAPY_TYPE_LABEL,
   PLACE_LABEL,
   useDeleteHealthEvent,
   useHealthEvents,
@@ -73,6 +76,7 @@ const iconePorTipo = {
   consulta: Stethoscope,
   exame: TestTube,
   remedio: Pill,
+  terapia: Activity,
 } as const;
 
 function Saude() {
@@ -274,6 +278,11 @@ function Cartao({
           <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
             {HEALTH_KIND_LABEL[evento.kind]}
           </span>
+          {evento.kind === "terapia" && evento.therapy_type && (
+            <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+              {THERAPY_TYPE_LABEL[evento.therapy_type]}
+            </span>
+          )}
           {isHoje && (
             <span className="rounded-full bg-warning px-2 py-0.5 text-[11px] font-bold text-warning-foreground">
               hoje
@@ -285,6 +294,12 @@ function Cartao({
             </span>
           )}
         </p>
+        {evento.kind === "terapia" && evento.session_number && evento.session_total && (
+          <p className="text-sm text-muted-foreground">
+            Sessão {evento.session_number} de {evento.session_total}
+            {evento.session_frequency ? ` · ${THERAPY_FREQUENCY_LABEL[evento.session_frequency].toLowerCase()}` : ""}
+          </p>
+        )}
         <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
           <CalendarClock className="size-4" />
           {formatDate(evento.scheduled_date)}

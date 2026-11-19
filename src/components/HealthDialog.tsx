@@ -25,6 +25,8 @@ import {
   type HealthEvent,
   type HealthKind,
   type PlaceType,
+  type TherapyFrequency,
+  type TherapyType,
 } from "@/lib/health";
 
 type Props = {
@@ -51,6 +53,9 @@ const vazio = (date: string) => ({
   notes: "",
   is_recurring: false,
   recurrence_interval_months: 1,
+  therapy_type: "fisioterapia" as TherapyType,
+  session_frequency: "diaria" as TherapyFrequency,
+  session_total: 10,
 });
 
 export function HealthDialog({ open, onOpenChange, event }: Props) {
@@ -82,6 +87,9 @@ export function HealthDialog({ open, onOpenChange, event }: Props) {
             notes: event.notes ?? "",
             is_recurring: event.is_recurring,
             recurrence_interval_months: event.recurrence_interval_months,
+            therapy_type: event.therapy_type ?? "fisioterapia",
+            session_frequency: event.session_frequency ?? "diaria",
+            session_total: event.session_total ?? 10,
           }
         : vazio(todayISO()),
     );
@@ -188,12 +196,16 @@ export function HealthDialog({ open, onOpenChange, event }: Props) {
           state: form.state.trim() || null,
           notes: form.notes.trim() || null,
           done: event?.done ?? false,
-          is_recurring: form.is_recurring,
+          is_recurring: form.kind === "terapia" ? false : form.is_recurring,
           recurrence_interval_months: Math.max(1, Number(form.recurrence_interval_months) || 1),
           series_id: event?.series_id ?? null,
+          therapy_type: form.kind === "terapia" ? form.therapy_type : null,
+          session_frequency: form.kind === "terapia" ? form.session_frequency : null,
+          session_number: event?.session_number ?? (form.kind === "terapia" ? 1 : null),
+          session_total: form.kind === "terapia" ? form.session_total : null,
         },
       });
-      toast.success(event ? "Agendamento atualizado" : "Agendamento salvo");
+      toast.success(event ? "Agendamento atualizado" : form.kind === "terapia" ? `${form.session_total} sessões de terapia agendadas` : "Agendamento salvo");
       onOpenChange(false);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Não foi possível salvar");
@@ -223,6 +235,45 @@ export function HealthDialog({ open, onOpenChange, event }: Props) {
               </SelectContent>
             </Select>
           </div>
+
+          {form.kind === "terapia" && (
+            <>
+              <div className="space-y-1.5">
+                <Label>Tipo de terapia</Label>
+                <Select value={form.therapy_type} onValueChange={(value) => setForm((current) => ({
+                  ...current,
+                  therapy_type: value as TherapyType,
+                  session_frequency: value === "acupuntura" ? "semanal" : "diaria",
+                }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="acupuntura">Acupuntura</SelectItem>
+                    <SelectItem value="fisioterapia">Fisioterapia</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Frequência das sessões</Label>
+                <Select value={form.session_frequency} onValueChange={(value) => set("session_frequency", value as TherapyFrequency)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="diaria">Diária</SelectItem>
+                    <SelectItem value="semanal">Semanal</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>{form.session_frequency === "diaria" ? "Duração do tratamento" : "Quantidade de sessões"}</Label>
+                <Select value={String(form.session_total)} onValueChange={(value) => set("session_total", Number(value))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {[5, 10, 15].map((total) => <SelectItem key={total} value={String(total)}>{total} {form.session_frequency === "diaria" ? "dias" : "sessões"}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">As sessões serão agendadas a partir da data escolhida.</p>
+              </div>
+            </>
+          )}
 
           <div className="space-y-1.5">
             <Label htmlFor="title">Descrição</Label>
@@ -423,7 +474,7 @@ export function HealthDialog({ open, onOpenChange, event }: Props) {
             </p>
           </div>
 
-          <div className="space-y-1.5 sm:col-span-2">
+          {form.kind !== "terapia" && <div className="space-y-1.5 sm:col-span-2">
             <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-border/70 p-3 text-sm">
               <input
                 type="checkbox"
@@ -439,7 +490,7 @@ export function HealthDialog({ open, onOpenChange, event }: Props) {
               />
               Repetir todo mês
             </label>
-          </div>
+          </div>}
 
           <div className="space-y-1.5 sm:col-span-2">
             <Label htmlFor="notes">Observações</Label>

@@ -186,6 +186,10 @@ export type Database = {
           scheduled_date: string
           scheduled_time: string | null
           series_id: string | null
+          therapy_type: string | null
+          session_frequency: string | null
+          session_number: number | null
+          session_total: number | null
           state: string | null
           street: string | null
           title: string
@@ -211,6 +215,10 @@ export type Database = {
           scheduled_date: string
           scheduled_time?: string | null
           series_id?: string | null
+          therapy_type?: string | null
+          session_frequency?: string | null
+          session_number?: number | null
+          session_total?: number | null
           state?: string | null
           street?: string | null
           title: string
@@ -236,6 +244,10 @@ export type Database = {
           scheduled_date?: string
           scheduled_time?: string | null
           series_id?: string | null
+          therapy_type?: string | null
+          session_frequency?: string | null
+          session_number?: number | null
+          session_total?: number | null
           state?: string | null
           street?: string | null
           title?: string
