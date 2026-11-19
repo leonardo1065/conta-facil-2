@@ -146,30 +146,76 @@ export function useHealthEvents() {
 
 export type HealthInput = Omit<HealthEvent, "id" | "user_id">;
 
+export const therapySessionDates = (
+  startDate: string,
+  total: number,
+  frequency: TherapyFrequency,
+  skippedWeekdays: number[],
+) => {
+  const dates = [startDate];
+  const skipped = new Set(skippedWeekdays);
+  while (dates.length < total) {
+    let nextDate = addDays(
+      dates[dates.length - 1]!,
+      frequency === "semanal" ? 7 : 1,
+    );
+    while (skipped.has(new Date(`${nextDate}T12:00:00`).getDay())) {
+      nextDate = addDays(nextDate, 1);
+    }
+    dates.push(nextDate);
+  }
+  return dates;
+};
+
 export function useSaveHealthEvent() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, values }: { id?: string; values: HealthInput }) => {
+    mutationFn: async ({ id, event, values, skippedWeekdays = [0, 6] }: { id?: string; event?: HealthEvent | null; values: HealthInput; skippedWeekdays?: number[] }) => {
+      const sessionTotal = values.kind === "terapia" ? values.session_total ?? 10 : 1;
+      const dates = values.kind === "terapia"
+        ? therapySessionDates(values.scheduled_date, sessionTotal, values.session_frequency ?? "diaria", skippedWeekdays)
+        : [values.scheduled_date];
+
       if (id) {
-        const { error } = await supabase.from("health_events").update(values).eq("id", id);
+        const convertingToTherapy = event?.kind !== "terapia" && values.kind === "terapia";
+        const seriesId = convertingToTherapy ? crypto.randomUUID() : values.series_id;
+        const firstSession = {
+          ...values,
+          series_id: seriesId ?? null,
+          session_number: values.kind === "terapia" ? 1 : values.session_number,
+          session_total: values.kind === "terapia" ? sessionTotal : values.session_total,
+          scheduled_date: dates[0]!,
+        };
+        const { error } = await supabase.from("health_events").update(firstSession).eq("id", id);
         if (error) throw error;
+        if (convertingToTherapy && dates.length > 1) {
+          const { data: userData } = await supabase.auth.getUser();
+          const userId = userData.user?.id;
+          if (!userId) throw new Error("Sessão expirada");
+          const { error: insertError } = await supabase.from("health_events").insert(
+            dates.slice(1).map((scheduled_date, index) => ({
+              ...firstSession,
+              user_id: userId,
+              done: false,
+              scheduled_date,
+              session_number: index + 2,
+            })),
+          );
+          if (insertError) throw insertError;
+        }
         return;
       }
       const { data: userData } = await supabase.auth.getUser();
       const userId = userData.user?.id;
       if (!userId) throw new Error("Sessão expirada");
-      const sessionTotal = values.kind === "terapia" ? values.session_total ?? 10 : 1;
       const seriesId = values.kind === "terapia" ? crypto.randomUUID() : values.series_id;
-      const sessions = Array.from({ length: sessionTotal }, (_, index) => ({
+      const sessions = dates.map((scheduled_date, index) => ({
         ...values,
         user_id: userId,
         series_id: seriesId,
         session_number: values.kind === "terapia" ? index + 1 : null,
         session_total: values.kind === "terapia" ? sessionTotal : null,
-        scheduled_date:
-          values.kind === "terapia" && index > 0
-            ? addDays(values.scheduled_date, index * (values.session_frequency === "semanal" ? 7 : 1))
-            : values.scheduled_date,
+        scheduled_date,
       }));
       const { error } = await supabase.from("health_events").insert(sessions);
       if (error) throw error;

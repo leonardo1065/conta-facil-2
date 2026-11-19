@@ -56,7 +56,18 @@ const vazio = (date: string) => ({
   therapy_type: "fisioterapia" as TherapyType,
   session_frequency: "diaria" as TherapyFrequency,
   session_total: 10,
+  session_skip_days: [0, 6],
 });
+
+const DIAS_SEMANA = [
+  { value: 0, label: "Domingo" },
+  { value: 1, label: "Segunda" },
+  { value: 2, label: "Terça" },
+  { value: 3, label: "Quarta" },
+  { value: 4, label: "Quinta" },
+  { value: 5, label: "Sexta" },
+  { value: 6, label: "Sábado" },
+];
 
 export function HealthDialog({ open, onOpenChange, event }: Props) {
   const salvar = useSaveHealthEvent();
@@ -90,6 +101,7 @@ export function HealthDialog({ open, onOpenChange, event }: Props) {
             therapy_type: event.therapy_type ?? "fisioterapia",
             session_frequency: event.session_frequency ?? "diaria",
             session_total: event.session_total ?? 10,
+            session_skip_days: [0, 6],
           }
         : vazio(todayISO()),
     );
@@ -176,9 +188,19 @@ export function HealthDialog({ open, onOpenChange, event }: Props) {
       toast.error("Informe o que está agendado");
       return;
     }
+    if (form.kind === "terapia" && (!Number.isInteger(form.session_total) || form.session_total < 1)) {
+      toast.error("Informe uma quantidade de sessões válida (mínimo 1)");
+      return;
+    }
+    if (form.kind === "terapia" && form.session_total > 1 && form.session_skip_days.length === 7) {
+      toast.error("Deixe pelo menos um dia da semana disponível para as sessões");
+      return;
+    }
     try {
       await salvar.mutateAsync({
         id: event?.id,
+        event,
+        skippedWeekdays: form.session_skip_days,
         values: {
           kind: form.kind,
           title: form.title.trim(),
@@ -205,7 +227,9 @@ export function HealthDialog({ open, onOpenChange, event }: Props) {
           session_total: form.kind === "terapia" ? form.session_total : null,
         },
       });
-      toast.success(event ? "Agendamento atualizado" : form.kind === "terapia" ? `${form.session_total} sessões de terapia agendadas` : "Agendamento salvo");
+      toast.success(event && event.kind !== "terapia" && form.kind === "terapia"
+        ? `${form.session_total} sessões de terapia agendadas`
+        : event ? "Agendamento atualizado" : form.kind === "terapia" ? `${form.session_total} sessões de terapia agendadas` : "Agendamento salvo");
       onOpenChange(false);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Não foi possível salvar");
@@ -263,14 +287,27 @@ export function HealthDialog({ open, onOpenChange, event }: Props) {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label>{form.session_frequency === "diaria" ? "Duração do tratamento" : "Quantidade de sessões"}</Label>
-                <Select value={String(form.session_total)} onValueChange={(value) => set("session_total", Number(value))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {[5, 10, 15].map((total) => <SelectItem key={total} value={String(total)}>{total} {form.session_frequency === "diaria" ? "dias" : "sessões"}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">As sessões serão agendadas a partir da data escolhida.</p>
+                <Label htmlFor="session_total">Quantidade de sessões</Label>
+                <Input id="session_total" type="number" min={1} step={1} value={form.session_total} onChange={(e) => set("session_total", Number(e.target.value))} />
+                <p className="text-xs text-muted-foreground">As datas serão montadas a partir da data escolhida e da frequência.</p>
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label>Dias sem sessão</Label>
+                <div className="flex flex-wrap gap-x-4 gap-y-2">
+                  {DIAS_SEMANA.map(({ value, label }) => (
+                    <label key={value} className="flex cursor-pointer items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 accent-primary"
+                        checked={form.session_skip_days.includes(value)}
+                        onChange={(e) => set("session_skip_days", e.target.checked
+                          ? [...form.session_skip_days, value].sort()
+                          : form.session_skip_days.filter((day) => day !== value))}
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
               </div>
             </>
           )}
